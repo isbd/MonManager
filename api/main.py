@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from routes import player
+from routes import player, encounter
 from database import engine
 from models.base import Base
 import models
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -11,6 +12,8 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(player.router, prefix="/player", tags=["Player"])
+app.include_router(encounter.router, prefix="/encounter", tags=["Encounter"])
