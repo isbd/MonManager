@@ -42,21 +42,21 @@ TBD
 
 player.py
 - [X] `POST     /player                     -- create player`
-- [X] `GET      /player                     -- list all players`
-- [X] `GET      /player/{id}                -- get specific player by id`
-- [X] `GET      /player/{id}/monsters       -- list a player's monsters`
-- [ ] `GET      /player/{id}/party          -- list a player's party`
+- [X] `GET      /player                     -- [AUTH] list all players`
+- [X] `GET      /player/{id}                -- [AUTH] get specific player by id`
+- [X] `GET      /player/{id}/monsters       -- [AUTH] list a player's monsters`
+- [ ] `GET      /player/{id}/party          -- [AUTH] list a player's party `
 
 monster.py
-- [X] `GET    /monster/{id}                 -- get specific monster by id`
+- [X] `GET    /monster/{id}                 -- [AUTH] get specific monster by id`
 
 encounter.py
-- [ ] `POST     /encounter/wild             -- attempt a wild monster`
-- [ ] `POST     /encounter/challenge/{id}   -- attempt to challenge a player to encounter`
-- [ ] `POST     /encounter/{id}/attack      -- attempt an attack`
-- [ ] `POST     /encounter/{id}/swap        -- attempt to swap monsters`
-- [ ] `POST     /encounter/{id}/surrender   -- forfeit the battle`
-- [ ] `GET      /encounter/{id}             -- get the status of the current battle`
+- [ ] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
+- [ ] `POST     /encounter/challenge/{id}   -- [AUTH] attempt to challenge a player to encounter`
+- [ ] `POST     /encounter/{id}/attack      -- [AUTH] attempt an attack`
+- [ ] `POST     /encounter/{id}/swap        -- [AUTH] attempt to swap monsters`
+- [ ] `POST     /encounter/{id}/surrender   -- [AUTH] forfeit the battle`
+- [ ] `GET      /encounter/{id}             -- [AUTH] get the status of the current battle`
 
 Full docs at: `http://localhost:8000/docs`
 
@@ -89,6 +89,7 @@ local res = http.get("http://YOUR_IP:8000/player")
 local players = textutils.unserialiseJSON(res.readAll())
 res.close()
 ```
+Most endpoints require an API key that is given upon account creation.
 
 ---
 
