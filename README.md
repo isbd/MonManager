@@ -44,10 +44,9 @@ player.py
 - [X] `POST     /player                     -- create player`
 - [X] `GET      /player                     -- [AUTH] list all players`
 - [X] `GET      /player/{id}                -- [AUTH] get specific player by id`
-- [X] `GET      /player/{id}/monsters       -- [AUTH] list a player's monsters`
-- [ ] `GET      /player/{id}/party          -- [AUTH] list a player's party `
 
 monster.py
+- [X] `GET    /monster/                     -- [AUTH] list a player's monsters`
 - [X] `GET    /monster/{id}                 -- [AUTH] get specific monster by id`
 
 encounter.py

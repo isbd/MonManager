@@ -1,16 +1,19 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
-from routes import player, encounter, monster
-from database import engine
-from models.base import Base
-from dependencies import get_current_player
+
 import models
+from database import engine
+from dependencies import get_current_player
+from fastapi import Depends, FastAPI
+from models.base import Base
+from routes import encounter, monster, player
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 
