@@ -92,15 +92,18 @@ Most endpoints require an API key that is given upon account creation.
 
 ---
 
-## Useful Commands
+## Makefile commands
 
 ```bash
-make build      # build the containers
-make up         # start all services
-make down       # stop all services
-make refresh    # build the containers and start them back up
-make logs       # tail all logs
-make db-command # enter db for direct sql commands
-make lint       # lint and auto fix api dir. Requires container running
-make lint-check # check lint errors in api dir. Requires container running
+build:           Build the containers fresh
+db-command:      Enter postgres container for SQL commands
+down:            Shut the docker containers down
+lint:            Linting fixes to the api directory
+lint-check:      Check for linting issues without fixes
+help:            Show this help message
+logs:            View the logs from the docker containers
+nuke:            Nuke the database and re-seed it
+refresh:         Build the containers fresh then restart them
+seed:            Seed the data into the database
+up:              Bring the docker containers up
 ```

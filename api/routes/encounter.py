@@ -19,6 +19,8 @@ async def attempt_encounter(
     player: PlayerInstance = Depends(get_current_player),
 ):
     """Attempt to create an encounter."""
+    # Ensure the player is not already in an encounter
+
     # TODO: Check player cooldown, randomizer, random monster.
     # TODO: Fix return to return success, monster_id, encounter_id and name only. Don't auto catch
     a = random.randint(0, 10)
@@ -33,6 +35,7 @@ async def attempt_encounter(
     if not species:
         raise HTTPException(status_code=400, detail="Failed to find GOBLIN")
 
+    # Create the creature
     wild_monster = MonsterInstance(
         species_id=species.id,
         max_hp=4,
@@ -46,6 +49,15 @@ async def attempt_encounter(
     await db.refresh(wild_monster)
     # Return an encounter, with the ID
     # Lock player into encounter via status change
+
+
+    # Create and populate a new encounter
+    # Tie the encounter to the player
+
+    # Success
+    # The encounter ID
+    # Name
+    # ID of the creature?
 
     return WildEncounterResponse(
         success=True,
