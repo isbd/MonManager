@@ -1,13 +1,13 @@
 import secrets
 
-from database import get_db
-from dependencies import get_current_player
 from fastapi import APIRouter, Depends, HTTPException
-from models.player import PlayerInstance
-from schemas.player import PlayerCreate, PlayerCreateResponse, PlayerResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+
+from database import get_db
+from dependencies import get_current_player
+from models.player import PlayerInstance
+from schemas.player import PlayerCreate, PlayerCreateResponse, PlayerResponse
 
 router = APIRouter()
 

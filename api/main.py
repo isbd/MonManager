@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 
-import models
+from fastapi import Depends, FastAPI
+
 from database import engine
 from dependencies import get_current_player
-from fastapi import Depends, FastAPI
+from models import encounter, monster, player
 from models.base import Base
 from routes import encounter, monster, player
 

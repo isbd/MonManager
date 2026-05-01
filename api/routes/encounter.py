@@ -1,13 +1,14 @@
 import random
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database import get_db
 from dependencies import get_current_player
-from fastapi import APIRouter, Depends, HTTPException
 from models.monster import MonsterInstance, MonsterSpecies
 from models.player import PlayerInstance
 from schemas.encounter import WildEncounterResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 

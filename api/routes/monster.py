@@ -1,12 +1,13 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
+
 from database import get_db
 from dependencies import get_current_player
-from fastapi import APIRouter, Depends, HTTPException
 from models.monster import MonsterInstance
 from models.player import PlayerInstance
 from schemas.monster import MonstersResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
 
 router = APIRouter()
 
