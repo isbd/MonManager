@@ -15,3 +15,9 @@ logs:
 
 db-command:
 	docker exec -it monserver_db psql -U monuser -d mondb
+
+lint:
+	docker exec -it monserver_api ruff check --fix . && ruff format .
+
+lint-check:
+	docker exec -it monserver_api ruff check .

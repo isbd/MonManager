@@ -1,6 +1,8 @@
-from .base import Base
-from sqlalchemy import Column, Integer, Boolean, ForeignKey, Enum
 import enum
+
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer
+
+from .base import Base
 
 
 class EncounterType(enum.Enum):

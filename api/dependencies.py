@@ -1,9 +1,10 @@
-from fastapi import Header, HTTPException, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, HTTPException
+from fastapi.security import APIKeyHeader
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database import get_db
 from models.player import PlayerInstance
-from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 

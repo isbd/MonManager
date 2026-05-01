@@ -1,32 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from database import get_db
-from models.player import PlayerInstance
-from models.monster import MonsterSpecies, MonsterInstance
-from schemas.encounter import WildEncounterCreate, WildEncounterResponse
 import random
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_db
+from dependencies import get_current_player
+from models.monster import MonsterInstance, MonsterSpecies
+from models.player import PlayerInstance
+from schemas.encounter import WildEncounterResponse
 
 router = APIRouter()
 
 
 @router.post("/wild", response_model=WildEncounterResponse)
 async def attempt_encounter(
-    body: WildEncounterCreate, db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    player: PlayerInstance = Depends(get_current_player),
 ):
     """Attempt to create an encounter."""
-
-    result = await db.execute(
-        select(PlayerInstance).where(PlayerInstance.name == body.name)
-    )
-    existing = result.scalar_one_or_none()
-
-    if not existing:
-        raise HTTPException(status_code=400, detail="Player not found")
-
+    # TODO: Check player cooldown, randomizer, random monster.
+    # TODO: Fix return to return success, monster_id, encounter_id and name only. Don't auto catch
     a = random.randint(0, 10)
     if a > 5:
-        raise HTTPException(status_code=401, detail="Number was too high!")
+        return WildEncounterResponse(success=False, message="No monster appeared...")
 
     result = await db.execute(
         select(MonsterSpecies).where(MonsterSpecies.name == "Goblin")
@@ -42,14 +39,21 @@ async def attempt_encounter(
         current_hp=4,
         level=1,
         in_party=False,
-        owner_id=existing.id,
+        owner_id=player.id,
     )
     db.add(wild_monster)
     await db.commit()
     await db.refresh(wild_monster)
-    # Return an encounter
+    # Return an encounter, with the ID
+    # Lock player into encounter via status change
 
-    return species
+    return WildEncounterResponse(
+        success=True,
+        message=f"A wild {species.name} appeared!",
+        id=species.id,
+        name=species.name,
+        description=species.description,
+    )
 
 
 # PVP
