@@ -30,6 +30,7 @@ class Encounter(Base):
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )
 
+
 # class EncounterTurn(Base):
 #     __tablename__ = "encounter_turns"
 

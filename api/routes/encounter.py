@@ -42,7 +42,7 @@ async def attempt_encounter(
         current_hp=4,
         level=1,
         in_party=False,
-        owner_id=None
+        owner_id=existing.id,
     )
     db.add(wild_monster)
     await db.commit()
@@ -62,4 +62,3 @@ async def attempt_encounter(
 # Set challenger.active_encounter_id
 
 # Once encounter is over, must null the active_encounter!
-

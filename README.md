@@ -44,19 +44,19 @@ player.py
 - [X] `POST     /player                     -- create player`
 - [X] `GET      /player                     -- list all players`
 - [X] `GET      /player/{id}                -- get specific player by id`
-- [ ] `GET      /player/{id}/monsters       -- list a player's monsters`
-- [ ] `GET      /player/{id}/party          -- list a player's party`
+- [X] `GET      /player/{id}/monsters       -- list a player's monsters`
 - [ ] `GET      /player/{id}/party          -- list a player's party`
 
 monster.py
-- [ ] `GET    /monster/{id}                 -- get specific monster by id`
+- [X] `GET    /monster/{id}                 -- get specific monster by id`
 
 encounter.py
 - [ ] `POST     /encounter/wild             -- attempt a wild monster`
-- [ ] `GET      /encounter/{id}             -- get the status of the current battle`
+- [ ] `POST     /encounter/challenge/{id}   -- attempt to challenge a player to encounter`
 - [ ] `POST     /encounter/{id}/attack      -- attempt an attack`
 - [ ] `POST     /encounter/{id}/swap        -- attempt to swap monsters`
 - [ ] `POST     /encounter/{id}/surrender   -- forfeit the battle`
+- [ ] `GET      /encounter/{id}             -- get the status of the current battle`
 
 Full docs at: `http://localhost:8000/docs`
 

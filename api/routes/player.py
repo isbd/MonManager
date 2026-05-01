@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload, selectinload
 from database import get_db
 from models.player import PlayerInstance
+from models.monster import MonsterInstance
 from schemas.player import PlayerCreate, PlayerResponse
+from schemas.monster import MonstersResponse
 
 router = APIRouter()
 
@@ -46,3 +49,21 @@ async def get_player(player_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Player not found")
 
     return player
+
+
+@router.get("/{player_id}/monsters", response_model=list[MonstersResponse])
+async def get_monsters(player_id: int, db: AsyncSession = Depends(get_db)):
+    """Get a specific players monsters."""
+    result = await db.execute(
+        select(PlayerInstance)
+        .where(PlayerInstance.id == player_id)
+        .options(
+            selectinload(PlayerInstance.monsters).joinedload(MonsterInstance.species)
+        )
+    )
+    player = result.scalar_one_or_none()
+
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    return player.monsters
