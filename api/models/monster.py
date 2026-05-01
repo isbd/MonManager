@@ -2,6 +2,7 @@ from .base import Base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
+
 class MonsterSpecies(Base):
     __tablename__ = "species"
 
@@ -9,8 +10,12 @@ class MonsterSpecies(Base):
     name = Column(String, unique=True)
     description = Column(String)
 
+    def __repr__(self):
+        return f"({self.id}) {self.name} {self.description}"
+
+
 class MonsterInstance(Base):
-    __tablename__ = "monster_instance"
+    __tablename__ = "monster_instances"
 
     id = Column(Integer, primary_key=True)
     nickname = Column(String)

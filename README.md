@@ -40,6 +40,23 @@ TBD
 
 ## Key Endpoints
 
+player.py
+- [X] `POST     /player                     -- create player`
+- [X] `GET      /player                     -- list all players`
+- [X] `GET      /player/{id}                -- get specific player by id`
+- [X] `GET      /player/{id}/monsters       -- list a player's monsters`
+- [ ] `GET      /player/{id}/party          -- list a player's party`
+
+monster.py
+- [X] `GET    /monster/{id}                 -- get specific monster by id`
+
+encounter.py
+- [ ] `POST     /encounter/wild             -- attempt a wild monster`
+- [ ] `POST     /encounter/challenge/{id}   -- attempt to challenge a player to encounter`
+- [ ] `POST     /encounter/{id}/attack      -- attempt an attack`
+- [ ] `POST     /encounter/{id}/swap        -- attempt to swap monsters`
+- [ ] `POST     /encounter/{id}/surrender   -- forfeit the battle`
+- [ ] `GET      /encounter/{id}             -- get the status of the current battle`
 
 Full docs at: `http://localhost:8000/docs`
 
@@ -67,9 +84,9 @@ Started with `craftos` command
 ### Usage
 
 ```lua
--- List your monsters
-local res = http.get("http://YOUR_IP:8000/EXAMPLE")
-local mons = textutils.unserialiseJSON(res.readAll())
+-- List all players
+local res = http.get("http://YOUR_IP:8000/player")
+local players = textutils.unserialiseJSON(res.readAll())
 res.close()
 ```
 
@@ -83,4 +100,5 @@ make up         # start all services
 make down       # stop all services
 make refresh    # build the containers and start them back up
 make logs       # tail all logs
+make db-command # enter db for direct sql commands
 ```
