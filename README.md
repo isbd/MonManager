@@ -101,4 +101,6 @@ make down       # stop all services
 make refresh    # build the containers and start them back up
 make logs       # tail all logs
 make db-command # enter db for direct sql commands
+make lint       # lint and auto fix api dir. Requires container running
+make lint-check # check lint errors in api dir. Requires container running
 ```
