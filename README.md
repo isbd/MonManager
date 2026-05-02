@@ -1,6 +1,6 @@
 # MonManager
 
-A Pokemon-like monster server built for ComputerCraft, powered by FastAPI, PostgreSQL, and Redis — fully Dockerized.
+A Pokemon-like monster server built for ComputerCraft, powered by FastAPI, PostgreSQL — fully Dockerized.
 
 ---
 
@@ -34,7 +34,28 @@ open http://localhost:8000/docs
 
 ## Project Structure
 
-TBD
+```
+├── api
+│   ├── crud
+│   │   └── ...                     # Database manipulations (Create Read Update Delete)
+│   ├── database.py
+│   ├── dependencies.py
+│   ├── Dockerfile
+│   ├── main.py
+│   ├── models
+│   │   └── ...                     # Database table structure and relationships
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   ├── routes
+│   │   └── ...                     # FastAPI endpoint routes
+│   ├── schemas
+│   │   └── ...                     # FastAPI schemas for endpoint input/output structuring
+│   └── services
+│       └── ...                     # Backend logic
+```
+
+**Structured Flow:**
+    routes (filtered by schemas) -> services -> crud -> models
 
 ---
 
@@ -52,10 +73,11 @@ monster.py
 encounter.py
 - [ ] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
 - [ ] `POST     /encounter/challenge/{id}   -- [AUTH] attempt to challenge a player to encounter`
-- [ ] `POST     /encounter/{id}/attack      -- [AUTH] attempt an attack`
-- [ ] `POST     /encounter/{id}/swap        -- [AUTH] attempt to swap monsters`
-- [ ] `POST     /encounter/{id}/surrender   -- [AUTH] forfeit the battle`
-- [ ] `GET      /encounter/{id}             -- [AUTH] get the status of the current battle`
+- [ ] `POST     /encounter/attack           -- [AUTH] attempt an attack`
+- [ ] `POST     /encounter/swap             -- [AUTH] attempt to swap monsters`
+- [ ] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
+- [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
+- [ ] `GET      /encounter                  -- [AUTH] get the status of the current battle`
 
 Full docs at: `http://localhost:8000/docs`
 

@@ -9,7 +9,8 @@ from dependencies import get_current_player
 from models.encounter import Encounter, EncounterType
 from models.monster import MonsterInstance, MonsterSpecies
 from models.player import PlayerInstance
-from schemas.encounter import WildEncounterResponse
+from schemas.encounter import SurrenderResponse, WildEncounterResponse
+from services import encounter_service
 
 router = APIRouter()
 
@@ -72,6 +73,17 @@ async def attempt_encounter(
         encounter_id=encounter.id,
         name=species.name,
     )
+
+
+@router.post("/surrender", response_model=SurrenderResponse)
+async def attempt_surrender(
+    db: AsyncSession = Depends(get_db),
+    player: PlayerInstance = Depends(get_current_player),
+):
+    if player.active_encounter_id is None:
+        raise HTTPException(status_code=400, detail="No active encounter")
+
+    return await encounter_service.surrender(db, player)
 
 
 # PVP
