@@ -20,7 +20,7 @@ class Encounter(Base):
     # Shared
     challenger_id = Column(Integer, ForeignKey("player_instances.id"), nullable=False)
     challenger_mon_id = Column(
-        Integer, ForeignKey("monster_instances.id"), nullable=False
+        Integer, ForeignKey("monster_instances.id"), nullable=True
     )
 
     # Wild only

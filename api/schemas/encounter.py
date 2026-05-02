@@ -8,6 +8,5 @@ class WildEncounterResponse(BaseModel):
 
     success: bool
     message: str
-    id: Optional[int] = None
+    encounter_id: Optional[int] = None
     name: Optional[str] = None
-    description: Optional[str] = None
