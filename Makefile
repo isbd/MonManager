@@ -11,7 +11,7 @@ down: ## Shut the docker containers down
 	docker compose down
 
 lint: ## Linting fixes to the api directory
-	docker exec -it monserver_api ruff check --fix . && ruff format .
+	docker exec -it monserver_api sh -c "ruff check --fix . && ruff format ."
 
 lint-check: ## Check for linting issues without fixes
 	docker exec -it monserver_api ruff check .

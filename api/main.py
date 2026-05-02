@@ -2,9 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 
+# Required for the create_all
+import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
-from models import encounter, monster, player
 from models.base import Base
 from routes import encounter, monster, player
 
