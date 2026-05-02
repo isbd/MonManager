@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -10,6 +10,12 @@ class MonsterSpecies(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     description = Column(String)
+    spawn_weight = Column(Integer, server_default="100", nullable=False)
+    spawn_time = Column(
+        Enum("any", "day", "night", name="spawn_time_enum"),
+        default="any",
+        nullable=False,
+    )
 
     def __repr__(self):
         return f"({self.id}) {self.name} {self.description}"

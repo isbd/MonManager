@@ -25,3 +25,12 @@ async def delete_by_id(db: AsyncSession, encounter_id: int) -> bool:
     """Delete encounter by id."""
     encounter = await get_by_id(db, encounter_id)
     return await delete(db, encounter)
+
+
+async def create(db: AsyncSession, encounter: Encounter) -> Encounter:
+    if encounter is None:
+        return False
+    db.add(encounter)
+    await db.commit()
+    await db.refresh(encounter)
+    return encounter

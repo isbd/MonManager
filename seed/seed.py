@@ -13,15 +13,16 @@ def seed_species():
     with engine.connect() as conn:
         data = read_json("data/species.json")
         for entry in data:
-            conn.execute(
-                insert(species_table),
-                [
-                    {
-                        "name": entry.get("name"),
-                        "description": entry.get("description"),
-                    },
-                ],
-            )
+            row = {
+                "name": entry.get("name"),
+                "description": entry.get("description"),
+            }
+            if "weight" in entry:
+                row["spawn_weight"] = entry["weight"]
+            if "spawn_time" in entry:
+                row["spawn_time"] = entry["spawn_time"]
+
+            conn.execute(insert(species_table), [row])
         conn.commit()
 
 

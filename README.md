@@ -71,11 +71,11 @@ monster.py
 - [X] `GET    /monster/{id}                 -- [AUTH] get specific monster by id`
 
 encounter.py
-- [ ] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
+- [X] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
 - [ ] `POST     /encounter/challenge/{id}   -- [AUTH] attempt to challenge a player to encounter`
 - [ ] `POST     /encounter/attack           -- [AUTH] attempt an attack`
 - [ ] `POST     /encounter/swap             -- [AUTH] attempt to swap monsters`
-- [ ] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
+- [X] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
 - [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
 - [ ] `GET      /encounter                  -- [AUTH] get the status of the current battle`
 
