@@ -54,7 +54,9 @@ async def get_spawnable_species(
     return result.scalars().all()
 
 
-async def get_instances_by_player(db: AsyncSession, player_id: int) -> list[MonsterInstance]:
+async def get_instances_by_player(
+    db: AsyncSession, player_id: int
+) -> list[MonsterInstance]:
     """Get list of monsters player owns."""
     result = await db.execute(
         select(MonsterInstance)
@@ -64,11 +66,20 @@ async def get_instances_by_player(db: AsyncSession, player_id: int) -> list[Mons
     return result.scalars().all()
 
 
-async def create_instance(db: AsyncSession, monster_instance: MonsterInstance) -> MonsterInstance:
+async def create_instance(
+    db: AsyncSession, monster_instance: MonsterInstance
+) -> MonsterInstance:
     """Create a monster."""
     db.add(monster_instance)
     await db.commit()
     await db.refresh(monster_instance)
     return monster_instance
 
-# TODO: Update stats
+
+async def update_instance(
+    db: AsyncSession, monster_instance: MonsterInstance
+) -> MonsterInstance:
+    """Update monster instance."""
+    await db.commit()
+    await db.refresh(monster_instance)
+    return monster_instance

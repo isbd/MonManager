@@ -30,7 +30,9 @@ async def get_by_api_key(db: AsyncSession, api_key: str) -> Optional[PlayerInsta
     return result.scalar_one_or_none()
 
 
-async def set_active_encounter_id(db: AsyncSession, player: PlayerInstance, encounter_id: Optional[int]):
+async def set_active_encounter_id(
+    db: AsyncSession, player: PlayerInstance, encounter_id: Optional[int]
+):
     """Set a players active encounter id."""
     player.active_encounter_id = encounter_id
     await db.commit()

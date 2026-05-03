@@ -1,14 +1,13 @@
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crud import player_crud
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
 from schemas.player import PlayerCreate, PlayerCreateResponse, PlayerResponse
-from crud import player_crud
 
 router = APIRouter()
 
@@ -31,6 +30,7 @@ async def create_player(body: PlayerCreate, db: AsyncSession = Depends(get_db)):
 
     player = PlayerInstance(name=body.name, api_key=secrets.token_hex(32))
     return await player_crud.create(db, player)
+
 
 @router.get("/{player_id}", response_model=PlayerResponse)
 async def get_player(

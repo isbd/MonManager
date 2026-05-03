@@ -17,3 +17,11 @@ class SurrenderResponse(BaseModel):
 
     success: bool
     message: str
+
+
+class CatchResponse(BaseModel):
+    """Result from catch attempt."""
+
+    success: bool
+    message: str
+    monster_id: Optional[int]

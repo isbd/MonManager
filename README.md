@@ -25,6 +25,7 @@ Docker
 # 1. Build and start
 make build
 make up
+make seed
 
 # 2. Check API docs
 open http://localhost:8000/docs
@@ -76,7 +77,7 @@ encounter.py
 - [ ] `POST     /encounter/attack           -- [AUTH] attempt an attack`
 - [ ] `POST     /encounter/swap             -- [AUTH] attempt to swap monsters`
 - [X] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
-- [ ] `POST     /encounter/catch            -- [AUTH] attempt to catch wild monster`
+- [X] `POST     /encounter/catch            -- [AUTH] attempt to catch wild monster`
 - [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
 - [ ] `GET      /encounter                  -- [AUTH] get the status of the current battle`
 
