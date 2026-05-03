@@ -74,12 +74,15 @@ monster.py
 encounter.py
 - [X] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
 - [ ] `POST     /encounter/challenge/{id}   -- [AUTH] attempt to challenge a player to encounter`
-- [ ] `POST     /encounter/attack           -- [AUTH] attempt an attack`
-- [ ] `POST     /encounter/swap             -- [AUTH] attempt to swap monsters`
 - [X] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
-- [X] `POST     /encounter/catch            -- [AUTH] attempt to catch wild monster`
 - [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
-- [ ] `GET      /encounter                  -- [AUTH] get the status of the current battle`
+
+battle.py
+- [ ] `POST     /battle/attack              -- [AUTH] attempt an attack`
+- [ ] `POST     /battle/swap                -- [AUTH] attempt to swap monsters`
+- [ ] `POST     /battle/catch               -- [AUTH] attempt to catch wild monster`
+- [ ] `GET      /battle/                    -- [AUTH] get the status of current battle`
+
 
 Full docs at: `http://localhost:8000/docs`
 

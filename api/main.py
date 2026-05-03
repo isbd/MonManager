@@ -7,7 +7,7 @@ import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
 from models.base import Base
-from routes import encounter, monster, player
+from routes import battle, encounter, monster, player
 
 
 @asynccontextmanager
@@ -30,5 +30,11 @@ app.include_router(
     monster.router,
     prefix="/monster",
     tags=["Monster"],
+    dependencies=[Depends(get_current_player)],
+)
+app.include_router(
+    battle.router,
+    prefix="/battle",
+    tags=["Battle"],
     dependencies=[Depends(get_current_player)],
 )
