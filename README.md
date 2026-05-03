@@ -67,8 +67,8 @@ player.py
 - [X] `GET      /player/{id}                -- [AUTH] get specific player by id`
 
 monster.py
-- [X] `GET    /monster/                     -- [AUTH] list a player's monsters`
-- [X] `GET    /monster/{id}                 -- [AUTH] get specific monster by id`
+- [X] `GET      /monster/                   -- [AUTH] list a player's monsters`
+- [X] `GET      /monster/{id}               -- [AUTH] get specific monster by id`
 
 encounter.py
 - [X] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
@@ -76,6 +76,7 @@ encounter.py
 - [ ] `POST     /encounter/attack           -- [AUTH] attempt an attack`
 - [ ] `POST     /encounter/swap             -- [AUTH] attempt to swap monsters`
 - [X] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
+- [ ] `POST     /encounter/catch            -- [AUTH] attempt to catch wild monster`
 - [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
 - [ ] `GET      /encounter                  -- [AUTH] get the status of the current battle`
 
@@ -111,6 +112,9 @@ local players = textutils.unserialiseJSON(res.readAll())
 res.close()
 ```
 Most endpoints require an API key that is given upon account creation.
+
+**Note:**
+In order to allow external connections the server computercraft config must allow connections to the endpoints.
 
 ---
 

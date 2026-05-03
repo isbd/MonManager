@@ -30,8 +30,22 @@ async def get_by_api_key(db: AsyncSession, api_key: str) -> Optional[PlayerInsta
     return result.scalar_one_or_none()
 
 
-async def set_active_encounter_id(db, player, encounter_id: Optional[int]):
+async def set_active_encounter_id(db: AsyncSession, player: PlayerInstance, encounter_id: Optional[int]):
     """Set a players active encounter id."""
     player.active_encounter_id = encounter_id
     await db.commit()
     await db.refresh(player)
+
+
+async def create(db: AsyncSession, player: PlayerInstance) -> PlayerInstance:
+    """Create a player."""
+    db.add(player)
+    await db.commit()
+    await db.refresh(player)
+    return player
+
+
+async def get_all(db: AsyncSession) -> list[PlayerInstance]:
+    """Fetch all players."""
+    result = await db.execute(select(PlayerInstance))
+    return result.scalars().all()

@@ -54,6 +54,16 @@ async def get_spawnable_species(
     return result.scalars().all()
 
 
+async def get_instances_by_player(db: AsyncSession, player_id: int) -> list[MonsterInstance]:
+    """Get list of monsters player owns."""
+    result = await db.execute(
+        select(MonsterInstance)
+        .where(MonsterInstance.owner_id == player_id)
+        .options(joinedload(MonsterInstance.species))
+    )
+    return result.scalars().all()
+
+
 async def create_instance(db: AsyncSession, monster_instance: MonsterInstance) -> MonsterInstance:
     """Create a monster."""
     db.add(monster_instance)
