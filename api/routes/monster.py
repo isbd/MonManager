@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
+from crud import monster_crud
 from database import get_db
 from dependencies import get_current_player
-from models.monster import MonsterInstance
 from models.player import PlayerInstance
 from schemas.monster import MonstersResponse
 
@@ -15,12 +13,7 @@ router = APIRouter()
 @router.get("/{monster_id}", response_model=MonstersResponse)
 async def get_monster(monster_id: int, db: AsyncSession = Depends(get_db)):
     """Get a specific players monsters."""
-    result = await db.execute(
-        select(MonsterInstance)
-        .where(MonsterInstance.id == monster_id)
-        .options(joinedload(MonsterInstance.species))
-    )
-    monster = result.scalar_one_or_none()
+    monster = await monster_crud.get_full_by_instance_id(db, monster_id)
 
     if not monster:
         raise HTTPException(status_code=404, detail="Monster not found")
@@ -34,9 +27,4 @@ async def get_player_monsters(
     player: PlayerInstance = Depends(get_current_player),
 ):
     """Get all monsters belonging to current player."""
-    result = await db.execute(
-        select(MonsterInstance)
-        .where(MonsterInstance.owner_id == player.id)
-        .options(joinedload(MonsterInstance.species))
-    )
-    return result.scalars().all()
+    return await monster_crud.get_instances_by_player(db, player.id)

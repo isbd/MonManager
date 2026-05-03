@@ -11,5 +11,7 @@ class PlayerInstance(Base):
     name = Column(String, unique=True, nullable=False)
     api_key = Column(String, unique=True, nullable=False)
     monsters = relationship("MonsterInstance", back_populates="owner")
-    active_encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True)
+    active_encounter_id = Column(
+        Integer, ForeignKey("encounters.id", ondelete="SET NULL"), nullable=True
+    )
     active_encounter = relationship("Encounter", foreign_keys=[active_encounter_id])

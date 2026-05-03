@@ -4,10 +4,16 @@ from pydantic import BaseModel
 
 
 class WildEncounterResponse(BaseModel):
-    """Display the species."""
+    """Result for wild encounter attempt."""
 
     success: bool
     message: str
-    id: Optional[int] = None
+    encounter_id: Optional[int] = None
     name: Optional[str] = None
-    description: Optional[str] = None
+
+
+class SurrenderResponse(BaseModel):
+    """Result for surrender attempt."""
+
+    success: bool
+    message: str

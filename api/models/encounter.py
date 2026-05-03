@@ -1,6 +1,7 @@
 import enum
 
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer
+from sqlalchemy.orm import relationship
 
 from .base import Base
 
@@ -20,7 +21,7 @@ class Encounter(Base):
     # Shared
     challenger_id = Column(Integer, ForeignKey("player_instances.id"), nullable=False)
     challenger_mon_id = Column(
-        Integer, ForeignKey("monster_instances.id"), nullable=False
+        Integer, ForeignKey("monster_instances.id"), nullable=True
     )
 
     # Wild only
@@ -32,18 +33,7 @@ class Encounter(Base):
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )
 
-
-# class EncounterTurn(Base):
-#     __tablename__ = "encounter_turns"
-
-#     id = Column(Integer, primary_key=True)
-#     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=False)
-#     turn_number = Column(Integer, nullable=False)
-
-#     challenger_action = Column(String, nullable=True)
-#     challenged_action = Column(String, nullable=True)
-
-#     resolved = Column(Boolean, nullable=False, default=False)
+    turns = relationship("BattleTurn", cascade="all, delete-orphan")
 
 
 # TODO: Explore expanding this into separate tables
