@@ -9,3 +9,9 @@ class CatchResponse(BaseModel):
     success: bool
     message: str
     monster_id: Optional[int]
+
+class AttackRequest(BaseModel):
+    """Request to attack."""
+
+    attack_id: int
+    

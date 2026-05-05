@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, JSON
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -16,6 +16,7 @@ class MonsterSpecies(Base):
         default="any",
         nullable=False,
     )
+    starter_moves = Column(JSON, nullable=False, server_default="[]")
 
     def __repr__(self):
         return f"({self.id}) {self.name} {self.description}"
@@ -31,6 +32,8 @@ class MonsterInstance(Base):
     current_hp = Column(Integer, nullable=False)
     max_hp = Column(Integer, nullable=False)
     level = Column(Integer, nullable=False)
+
+    moves = relationship("MoveInstance", cascade="all, delete-orphan")
 
     species_id = Column(Integer, ForeignKey("species.id"))
     owner_id = Column(Integer, ForeignKey("player_instances.id"))

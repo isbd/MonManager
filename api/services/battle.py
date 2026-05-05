@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import services.encounter as encounter_service
@@ -31,3 +32,21 @@ async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchRespon
         message=f"You have caught a {monster.species.name}!",
         monster_id=monster.id,
     )
+
+
+async def attempt_attack(db: AsyncSession, player: PlayerInstance, attack_id: int):
+    """Attempt to attack."""
+    encounter = await encounter_service.fetch_player_encounter(db, player)
+
+    # TODO:
+    match encounter.encounter_type:
+        case EncounterType.wild:
+            pass
+        case EncounterType.pvp:
+            pass
+        case _:
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid encounter type when attacking.",
+            )
+    return

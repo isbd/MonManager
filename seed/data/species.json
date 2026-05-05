@@ -3,18 +3,21 @@
         "name": "Turtle",
         "description": "Hardshelled fella",
         "spawn_time": "day",
-        "weight": 10
+        "weight": 10,
+        "moves": ["Headbutt", "Bite"]
     },
     {
         "name": "Lizard",
         "description": "Sneaky fella",
         "spawn_time": "day",
-        "weight": 2
+        "weight": 2,
+        "moves": ["Headbutt", "Bite"]
     },
     {
         "name": "Goblin",
         "description": "Just a little fella",
         "spawn_time": "night",
-        "weight": 100
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"]
     }
 ]

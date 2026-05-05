@@ -32,7 +32,7 @@ async def resolve_encounter(db, encounter):
 
 async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderResponse:
     """Surrender from current encounter."""
-    encounter = await encounter_crud.get_by_id(db, player.active_encounter_id)
+    encounter = await fetch_player_encounter(db, player)
 
     match encounter.encounter_type:
         case EncounterType.wild:
@@ -66,13 +66,17 @@ async def attempt_wild_encounter(
         return WildEncounterResponse(success=False, message="No monster appeared...")
 
     monster_species = await monster_service.roll_species(db)
+
+    # Fetch players first monster TODO: placeholder right now, should replace with party system
+    player_monster = monster_service.grab_players_monster(db, player.id)
+
     wild_monster = await monster_service.create_monster_instance(db, monster_species)
 
     encounter_details = Encounter(
         active=True,
         encounter_type=EncounterType.wild,
         challenger_id=player.id,
-        challenger_mon_id=None,
+        challenger_mon_id=player_monster.id,
         wild_monster_id=wild_monster.id,
     )
     encounter = await encounter_crud.create(db, encounter_details)
