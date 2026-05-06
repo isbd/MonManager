@@ -1,5 +1,3 @@
-import secrets
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +6,7 @@ from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
 from schemas.player import PlayerCreate, PlayerCreateResponse, PlayerResponse
+from services import player_service
 
 router = APIRouter()
 
@@ -28,8 +27,7 @@ async def create_player(body: PlayerCreate, db: AsyncSession = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Player already exists")
 
-    player = PlayerInstance(name=body.name, api_key=secrets.token_hex(32))
-    return await player_crud.create(db, player)
+    return await player_service.create_player(db, body.name)
 
 
 @router.get("/{player_id}", response_model=PlayerResponse)

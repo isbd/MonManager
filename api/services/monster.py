@@ -33,7 +33,7 @@ async def roll_species(db: AsyncSession, by_time: bool = True) -> MonsterSpecies
 
 
 async def create_monster_instance(
-    db: AsyncSession, species: MonsterSpecies
+    db: AsyncSession, species: MonsterSpecies, owner_id: int = None
 ) -> MonsterInstance:
     """Create an instance of a monster."""
     # TODO: Randomize the stats. Optionally set owner_id
@@ -43,7 +43,7 @@ async def create_monster_instance(
         current_hp=4,
         level=1,
         in_party=False,
-        owner_id=None,
+        owner_id=owner_id,
     )
 
     monster = await monster_crud.create_instance(db, monster)
