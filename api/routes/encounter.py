@@ -32,7 +32,7 @@ async def attempt_surrender(
     return await encounter_service.surrender(db, player)
 
 
-@router.post("/", response_model=EncounterDetails)
+@router.get("/", response_model=EncounterDetails)
 async def current_encounter(
     db: AsyncSession = Depends(get_db),
     player: PlayerInstance = Depends(get_current_player),

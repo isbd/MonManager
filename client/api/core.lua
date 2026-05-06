@@ -1,4 +1,4 @@
-local API_BASE = "http://172.18.0.3:8000"
+local API_BASE = "http://api:8000"
 local config_path = "config.json"
 
 local function load_config()
@@ -64,24 +64,30 @@ local function request(method, path, body)
     })
 
     while true do
-        local event, param1, param2 = os.pullEvent()
+        local event, param1, param2, param3 = os.pullEvent()
         if event == "http_success" and param1 == url then
             local status = param2.getResponseCode()
             local raw = param2.readAll()
             param2.close()
             if status < 200 or status >= 300 then
-                print("HTTP error " .. status .. ": " .. raw)
-                return nil
+                return nil, "HTTP " .. status .. ": " .. raw
             end
             return textutils.unserialiseJSON(raw)
         elseif event == "http_failure" and param1 == url then
-            print("Request failed: " .. tostring(param2))
-            return nil
+            local errMsg = tostring(param2)
+            if param3 then
+                local body = param3.readAll()
+                param3.close()
+                if body and body ~= "" then
+                    errMsg = errMsg .. ": " .. body
+                end
+            end
+            return nil, "Request failed: " .. errMsg
         end
     end
 end
 
 local function get(path) return request("GET", path) end
-local function post(path, body) return request("POST", path, body) end
+local function post(path, body) return request("POST", path, body or {}) end
 
 return { get = get, post = post, post_unauthed = post_unauthed, save_config = save_config, load_config = load_config }

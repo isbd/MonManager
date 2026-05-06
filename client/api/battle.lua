@@ -9,7 +9,7 @@ local function catch()
 end
 
 local function get_moves()
-    return core.post("/battle/moves")
+    return core.get("/battle/moves")
 end
 
 return { attack = attack, catch = catch, get_moves = get_moves }
