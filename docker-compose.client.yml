@@ -1,0 +1,13 @@
+services:
+  craftos:
+    build:
+      context: .
+      dockerfile: Dockerfile.craftos
+    volumes:
+      - ./client:/craftos-data/computer/0:z
+    networks:
+      - monmanager_monnet
+
+networks:
+  monmanager_monnet:
+    external: true

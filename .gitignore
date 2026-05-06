@@ -6,3 +6,4 @@ holding/
 sprite_converter/
 __pycache__/
 .ruff_cache
+client/config.json

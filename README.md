@@ -98,16 +98,9 @@ Emulation can be done utilizing craftos
 
 https://www.craftos-pc.cc/docs/installation
 
-Settings files can be found under
-```
-~/.local/share/craftos-pc/config/*.json
-```
-and emulated files are under
-```
-~/.local/share/craftos-pc/computer/
-```
+For cli testing utilize `make client-build` and `make client` to execute a containerized craftos emulation.
 
-Started with `craftos` command
+Execution of the client code can be done by executing `main` when in the emulator.
 
 ### Usage
 
