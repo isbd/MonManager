@@ -5,8 +5,8 @@ from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
 from schemas.battle import AttackRequest, AttackResponse, CatchResponse
-from services import battle_service
 from schemas.move import MonsterMoveResponse
+from services import battle_service
 
 router = APIRouter()
 
