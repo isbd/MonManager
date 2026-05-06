@@ -11,6 +11,7 @@ class EncounterType(enum.Enum):
     pvp = "pvp"
 
 
+# TODO: Explore expanding this into separate tables
 class Encounter(Base):
     __tablename__ = "encounters"
 
@@ -34,6 +35,3 @@ class Encounter(Base):
     )
 
     turns = relationship("BattleTurn", cascade="all, delete-orphan")
-
-
-# TODO: Explore expanding this into separate tables

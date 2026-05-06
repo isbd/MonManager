@@ -1,10 +1,12 @@
 import datetime
 import random
+from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud import monster_crud
+from crud import monster_crud, move_crud
 from models.monster import MonsterInstance, MonsterSpecies
+from models.move import MoveInstance
 
 
 def get_current_spawn_time() -> str:
@@ -43,4 +45,21 @@ async def create_monster_instance(
         in_party=False,
         owner_id=None,
     )
-    return await monster_crud.create_instance(db, monster)
+
+    monster = await monster_crud.create_instance(db, monster)
+
+    for slot, move_id in enumerate(species.starter_moves, start=1):
+        move_instance = MoveInstance(monster_id=monster.id, slot=slot, move_id=move_id)
+        await move_crud.create_instance(db, move_instance)
+    return monster
+
+
+# TODO: replace this with a party system
+async def grab_players_monster(
+    db: AsyncSession, player_id: int
+) -> Optional[MonsterInstance]:
+    """Grab players first monster instance."""
+    monsters = await monster_crud.get_instances_by_player(db, player_id)
+    if not monsters:
+        return None
+    return monsters[0]
