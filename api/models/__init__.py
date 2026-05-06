@@ -1,1 +1,1 @@
-from . import battle, encounter, monster, player, move
+from . import battle, encounter, monster, move, player

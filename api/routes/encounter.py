@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
-from schemas.encounter import SurrenderResponse, WildEncounterResponse, EncounterDetails
+from schemas.encounter import EncounterDetails, SurrenderResponse, WildEncounterResponse
 from services import encounter_service
 
 router = APIRouter()

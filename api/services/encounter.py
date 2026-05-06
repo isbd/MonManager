@@ -7,7 +7,7 @@ import services.monster as monster_service
 from crud import encounter_crud, monster_crud, player_crud
 from models.encounter import Encounter, EncounterType
 from models.player import PlayerInstance
-from schemas.encounter import SurrenderResponse, WildEncounterResponse, EncounterDetails
+from schemas.encounter import EncounterDetails, SurrenderResponse, WildEncounterResponse
 
 
 async def fetch_player_encounter(db: AsyncSession, player: PlayerInstance) -> Encounter:
@@ -60,16 +60,7 @@ async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderRespon
 async def get_current_encounter_details(
     db: AsyncSession, player: PlayerInstance
 ) -> EncounterDetails:
-    encounter = await fetch_player_encounter(db, player)
-    # return EncounterDetails(
-    #     encounter_type=encounter.encounter_type,
-    #     challenger_id=encounter.challenged_id,
-    #     challenger_mon_id=encounter.challenged_mon_id,
-    #     wild_monster_id=encounter.wild_monster_id,
-    #     challenged_id=encounter.wild_monster_id,
-    #     challenged_mon_id=encounter.challenged_mon_id,
-    # )
-    return encounter
+    return await fetch_player_encounter(db, player)
 
 
 async def attempt_wild_encounter(

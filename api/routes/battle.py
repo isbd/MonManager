@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
-from schemas.battle import CatchResponse, AttackRequest
+from schemas.battle import AttackRequest, AttackResponse, CatchResponse
 from services import battle_service
+from schemas.move import MonsterMoveResponse
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ async def attempt_catch(
     return await battle_service.attempt_catch(db, player)
 
 
-@router.post("/attack", response_model=CatchResponse)
+@router.post("/attack", response_model=AttackResponse)
 async def attempt_attack(
     body: AttackRequest,
     db: AsyncSession = Depends(get_db),
@@ -27,3 +28,12 @@ async def attempt_attack(
 ):
     """Attempt an attack."""
     return await battle_service.attempt_attack(db, player, body.attack_id)
+
+
+@router.post("/moves", response_model=MonsterMoveResponse)
+async def get_active_moves(
+    db: AsyncSession = Depends(get_db),
+    player: PlayerInstance = Depends(get_current_player),
+):
+    """Fetch information about the active monsters current moves."""
+    return await battle_service.get_active_moves(db, player)

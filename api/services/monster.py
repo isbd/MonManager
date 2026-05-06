@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from crud import monster_crud, move_crud
 from models.monster import MonsterInstance, MonsterSpecies
 from models.move import MoveInstance
-from models.player import PlayerInstance
 
 
 def get_current_spawn_time() -> str:

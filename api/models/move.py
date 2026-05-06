@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from .base import Base
-
 
 # class MonsterType(Base):
 #     __tablename__ = "monster_types"
@@ -24,6 +23,7 @@ from .base import Base
 
 # TODO: Add typing
 
+
 class Move(Base):
     __tablename__ = "moves"
 
@@ -38,10 +38,15 @@ class Move(Base):
     # type_id = Column(Integer, ForeignKey("monster_types.id"))
     # move_type = relationship("MonsterType")
 
+
 class MoveInstance(Base):
     __tablename__ = "move_instances"
 
-    monster_id = Column(Integer, ForeignKey("monster_instances.id", ondelete="CASCADE"), primary_key=True)
+    monster_id = Column(
+        Integer,
+        ForeignKey("monster_instances.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
     slot = Column(Integer, primary_key=True)
     move_id = Column(Integer, ForeignKey("moves.id"))
     move = relationship("Move")
