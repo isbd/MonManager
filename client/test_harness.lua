@@ -53,6 +53,8 @@ local options = {
     { label = "Catch Attempt",          func = battle_api.catch },
     { label = "Attack Attempt",         func = battle_api.attack, args = { "Move ID" } },
     { label = "Moves",                  func = battle_api.get_moves },
+    { label = "Player Monsters",        func = monster_api.get_monsters },
+    { label = "Monster Info",           func = monster_api.get_monster, args = { "Monster ID" } },
 }
 
 local function prompt_args(arg_names)

@@ -122,6 +122,8 @@ Execution of the client code can be done by executing `test_harness` when in the
 7. Catch Attempt
 8. Attack Attempt
 9. Moves
+10. Player Monsters
+11. Monster Info
 0. Exit
 Select: 
 ```
