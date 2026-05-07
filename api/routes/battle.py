@@ -30,7 +30,7 @@ async def attempt_attack(
     return await battle_service.attempt_attack(db, player, body.attack_id)
 
 
-@router.post("/moves", response_model=MonsterMoveResponse)
+@router.get("/moves", response_model=MonsterMoveResponse)
 async def get_active_moves(
     db: AsyncSession = Depends(get_db),
     player: PlayerInstance = Depends(get_current_player),

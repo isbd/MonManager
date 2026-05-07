@@ -1,5 +1,5 @@
 
-.PHONY: help build up down refresh lint lint-check db-command logs nuke seed
+.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client
 
 build: ## Build the containers fresh
 	docker compose build --no-cache
@@ -42,3 +42,11 @@ seed: ## Seed the data into the database
 
 up: ## Bring the docker containers up
 	docker compose up -d
+
+client-build: ## Build the craftos client image
+	docker compose -f docker-compose.client.yml build craftos
+
+client: ## Start the craftos client
+	docker stop monmanager-craftos 2>/dev/null || true
+	docker rm monmanager-craftos 2>/dev/null || true
+	docker compose -f docker-compose.client.yml run --rm -it --name monmanager-craftos craftos

@@ -29,6 +29,11 @@ make seed
 
 # 2. Check API docs
 open http://localhost:8000/docs
+
+# 3. [Optional] Start the craftos CC emulator container and utilize the test_harness
+make client-build
+make client
+> test_harness
 ```
 
 ---
@@ -53,6 +58,8 @@ open http://localhost:8000/docs
 │   │   └── ...                     # FastAPI schemas for endpoint input/output structuring
 │   └── services
 │       └── ...                     # Backend logic
+└── client
+    └── ...                         # Computercraft client harness for testing
 ```
 
 **Structured Flow:**
@@ -98,16 +105,27 @@ Emulation can be done utilizing craftos
 
 https://www.craftos-pc.cc/docs/installation
 
-Settings files can be found under
+For cli testing utilize `make client-build` and `make client` to execute a containerized craftos emulation.
+
+Execution of the client code can be done by executing `test_harness` when in the emulator.
+
 ```
-~/.local/share/craftos-pc/config/*.json
-```
-and emulated files are under
-```
-~/.local/share/craftos-pc/computer/
+> test_harness
+
+=== Menu ===
+1. Current Player Info
+2. Player Info
+3. Players
+4. Wild Encounter
+5. Surrender Encounter
+6. Encounter Info
+7. Catch Attempt
+8. Attack Attempt
+9. Moves
+0. Exit
+Select: 
 ```
 
-Started with `craftos` command
 
 ### Usage
 
@@ -138,4 +156,6 @@ nuke:            Nuke the database and re-seed it
 refresh:         Build the containers fresh then restart them
 seed:            Seed the data into the database
 up:              Bring the docker containers up
+client-build:    Build the craftos client image
+client:          Start the craftos client
 ```
