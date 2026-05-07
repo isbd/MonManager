@@ -44,13 +44,15 @@ function display_result(api_func, label, ...)
 end
 
 local options = {
-    { label = "Player Info",         func = player_api.get_player },
-    { label = "Wild Encounter",      func = encounter_api.attempt_wild },
-    { label = "Surrender Encounter", func = encounter_api.surrender },
-    { label = "Encounter Info",      func = encounter_api.encounter },
-    { label = "Catch Attempt",       func = battle_api.catch },
-    { label = "Attack Attempt",      func = battle_api.attack, args = { "Move ID" } },
-    { label = "Moves",               func = battle_api.get_moves },
+    { label = "Current Player Info",    func = player_api.get_self},
+    { label = "Player Info",            func = player_api.get_player, args = { "Player ID" } },
+    { label = "Players",                func = player_api.get_players},
+    { label = "Wild Encounter",         func = encounter_api.attempt_wild },
+    { label = "Surrender Encounter",    func = encounter_api.surrender },
+    { label = "Encounter Info",         func = encounter_api.encounter },
+    { label = "Catch Attempt",          func = battle_api.catch },
+    { label = "Attack Attempt",         func = battle_api.attack, args = { "Move ID" } },
+    { label = "Moves",                  func = battle_api.get_moves },
 }
 
 local function prompt_args(arg_names)
