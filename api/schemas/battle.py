@@ -17,11 +17,24 @@ class AttackRequest(BaseModel):
     attack_id: int
 
 
+class AttackDetails(BaseModel):
+    first: bool
+    missed: bool
+    damage_dealt: int
+    move_name: str
+    targets_current_health: int
+    targets_total_health: int
+    targets_pre_reduced_health: int
+
+
 # TODO: Modify this, only for testing purposes right now
-class AttackResponse(BaseModel):
+class BattleResponse(BaseModel):
     """Response for attack."""
 
     success: bool
-    attack_name: Optional[str]
-    damage_dealth: Optional[int]
-    enemy_health: Optional[int]
+    active: bool
+    challenger_attack: Optional[AttackDetails]
+    challenged_attack: Optional[AttackDetails]
+
+
+# TODO: Change these to sub classes

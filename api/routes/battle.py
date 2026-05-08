@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
-from schemas.battle import AttackRequest, AttackResponse, CatchResponse
+from schemas.battle import AttackRequest, BattleResponse, CatchResponse
 from schemas.move import MonsterMoveResponse
 from services import battle_service
 
@@ -20,7 +20,7 @@ async def attempt_catch(
     return await battle_service.attempt_catch(db, player)
 
 
-@router.post("/attack", response_model=AttackResponse)
+@router.post("/attack", response_model=BattleResponse)
 async def attempt_attack(
     body: AttackRequest,
     db: AsyncSession = Depends(get_db),

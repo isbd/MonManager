@@ -1,11 +1,12 @@
 import random
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import services.monster as monster_service
 from crud import encounter_crud, monster_crud, player_crud
-from models.encounter import Encounter, EncounterType
+from models.encounter import Encounter, EncounterPerspective, EncounterType
 from models.player import PlayerInstance
 from schemas.encounter import EncounterDetails, SurrenderResponse, WildEncounterResponse
 
@@ -35,14 +36,14 @@ async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderRespon
     encounter = await fetch_player_encounter(db, player)
 
     match encounter.encounter_type:
-        case EncounterType.wild:
-            monster_id = encounter.wild_monster_id
+        case EncounterType.WILD:
+            monster_id = encounter.challenged_mon_id
             await resolve_encounter(db, encounter)
             await monster_crud.delete_by_id(db, monster_id)
             return SurrenderResponse(
                 success=True, message="Successfully escaped wild encounter!"
             )
-        case EncounterType.pvp:
+        case EncounterType.PVP:
             # TODO: Flush this out more
             # PVP
             # Ensure both challenger/challenged have null active encounters
@@ -63,6 +64,17 @@ async def get_current_encounter_details(
     return await fetch_player_encounter(db, player)
 
 
+def get_encounter_perspective(
+    encounter: Encounter, player_id: int
+) -> Optional[EncounterPerspective]:
+    if encounter.challenged_id == player_id:
+        return EncounterPerspective.CHALLENGED
+    elif encounter.challenger_id == player_id:
+        return EncounterPerspective.CHALLENGER
+    else:
+        return None
+
+
 async def attempt_wild_encounter(
     db: AsyncSession, player: PlayerInstance
 ) -> WildEncounterResponse:
@@ -80,10 +92,10 @@ async def attempt_wild_encounter(
 
     encounter_details = Encounter(
         active=True,
-        encounter_type=EncounterType.wild,
+        encounter_type=EncounterType.WILD,
         challenger_id=player.id,
         challenger_mon_id=player_monster.id,
-        wild_monster_id=wild_monster.id,
+        challenged_mon_id=wild_monster.id,
     )
     encounter = await encounter_crud.create(db, encounter_details)
     await player_crud.set_active_encounter_id(db, player, encounter.id)

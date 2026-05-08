@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from models.move import MoveInstance
+from models.move import Move, MoveInstance
 
 
 async def create_instance(
@@ -36,4 +36,10 @@ async def get_monster_move_by_slot(
         .where(MoveInstance.monster_id == monster_id, MoveInstance.slot == slot)
         .options(joinedload(MoveInstance.move))
     )
+    return result.scalar_one_or_none()
+
+
+async def get_by_id(db: AsyncSession, move_id: int) -> Optional[Move]:
+    """Get move by move_id"""
+    result = await db.execute(select(Move).where(Move.id == move_id))
     return result.scalar_one_or_none()

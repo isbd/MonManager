@@ -27,9 +27,10 @@ async def delete_by_id(db: AsyncSession, encounter_id: int) -> bool:
     return await delete(db, encounter)
 
 
-async def create(db: AsyncSession, encounter: Encounter) -> Encounter:
+async def create(db: AsyncSession, encounter: Encounter) -> Optional[Encounter]:
+    """Create encounter."""
     if encounter is None:
-        return False
+        return None
     db.add(encounter)
     await db.commit()
     await db.refresh(encounter)
