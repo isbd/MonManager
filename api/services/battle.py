@@ -7,7 +7,12 @@ import services.encounter as encounter_service
 import services.move as move_service
 from crud import battle_crud, encounter_crud, monster_crud, move_crud, player_crud
 from models.battle import BattleTurn
-from models.encounter import Encounter, EncounterPerspective, EncounterType
+from models.encounter import (
+    Encounter,
+    EncounterPerspective,
+    EncounterState,
+    EncounterType,
+)
 from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
@@ -49,7 +54,7 @@ async def attempt_attack(
     """Attempt to attack."""
     encounter = await encounter_service.fetch_player_encounter(db, player)
 
-    if encounter.active is False:
+    if encounter.active is not EncounterState.ACTIVE:
         # TODO: Alternative handling when not active
         raise HTTPException(
             status_code=400,
@@ -161,7 +166,7 @@ async def resolve_battle(db: AsyncSession, turn: BattleTurn):
     """Conclude the battle."""
     # TODO: Better handling for battles
     encounter = await encounter_crud.get_by_id(db, turn.encounter_id)
-    encounter.active = False
+    encounter.active = EncounterState.COMPLETED
     turn.resolved = True
     await battle_crud.update_instance(db, turn)
     await player_crud.set_player_id_active_encounter_id(

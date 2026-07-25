@@ -1,11 +1,11 @@
-from models.player import PlayerInstance
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+
 from dependencies import get_current_player_ws
+from models.player import PlayerInstance
 from notifier import notifier
 
-active: dict[str, WebSocket] = {} # player_id -> socket
-
 router = APIRouter()
+
 
 @router.websocket("/ws")
 async def ws_endpoint(

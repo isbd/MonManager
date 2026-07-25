@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.encounter import Encounter
+from models.encounter import Encounter, EncounterState
 
 
 async def get_by_id(db: AsyncSession, encounter_id: int) -> Optional[Encounter]:
@@ -32,6 +32,35 @@ async def create(db: AsyncSession, encounter: Encounter) -> Optional[Encounter]:
     if encounter is None:
         return None
     db.add(encounter)
+    await db.commit()
+    await db.refresh(encounter)
+    return encounter
+
+
+async def get_pending_by_challenger(db: AsyncSession, challenger_id: int):
+    """Fetch encounter that are pending by specified challenger_id"""
+    result = await db.execute(
+        select(Encounter).where(
+            Encounter.active == EncounterState.PENDING,
+            Encounter.challenger_id == challenger_id,
+        )
+    )
+    return result.scalars().all()
+
+
+async def get_pending_by_challenged(db: AsyncSession, challenged_id: int):
+    """Fetch encounter that are pending by specified challenged_id"""
+    result = await db.execute(
+        select(Encounter).where(
+            Encounter.active == EncounterState.PENDING,
+            Encounter.challenged_id == challenged_id,
+        )
+    )
+    return result.scalars().all()
+
+
+async def update_instance(db: AsyncSession, encounter: Encounter) -> Encounter:
+    """Update encounter instance."""
     await db.commit()
     await db.refresh(encounter)
     return encounter

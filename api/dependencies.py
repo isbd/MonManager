@@ -8,6 +8,7 @@ from models.player import PlayerInstance
 
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 
+
 async def get_current_player(
     x_api_key: str = Depends(api_key_header), db: AsyncSession = Depends(get_db)
 ) -> PlayerInstance:
@@ -20,6 +21,7 @@ async def get_current_player(
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     return player
+
 
 async def get_current_player_ws(
     websocket: WebSocket,
@@ -34,4 +36,3 @@ async def get_current_player_ws(
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
     return player
-

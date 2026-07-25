@@ -47,6 +47,8 @@ make client
 │   ├── database.py
 │   ├── dependencies.py
 │   ├── Dockerfile
+│   ├── docs
+│   │   └── ...                     # Architecture documentation markdown files
 │   ├── main.py
 │   ├── models
 │   │   └── ...                     # Database table structure and relationships
@@ -63,34 +65,56 @@ make client
 ```
 
 **Structured Flow:**
-    routes (filtered by schemas) -> services -> crud -> models
+```mermaid
+---
+config:
+  htmlLabels: false
+---
+flowchart TB
+    routes["`
+	    **Routes (filtered by schemas)**
+		`"]
+    services["`
+        **Services**
+		`"]
+	crud["`
+        **CRUD**
+		`"]
+	models["`
+        **Models**
+		`"]
+    routes --> services --> crud --> models
+```
 
 ---
 
 ## Key Endpoints
 
 player.py
-- [X] `POST     /player                     -- create player`
-- [X] `GET      /player                     -- [AUTH] list all players`
-- [X] `GET      /player/{id}                -- [AUTH] get specific player by id`
+- [X] `POST     /player                         -- create player`
+- [X] `GET      /player                         -- [AUTH] list all players`
+- [X] `GET      /player/{id}                    -- [AUTH] get specific player by id`
 
 monster.py
-- [X] `GET      /monster/                   -- [AUTH] list a player's monsters`
-- [X] `GET      /monster/{id}               -- [AUTH] get specific monster by id`
+- [X] `GET      /monster/                       -- [AUTH] list a player's monsters`
+- [X] `GET      /monster/{id}                   -- [AUTH] get specific monster by id`
 
 encounter.py
-- [X] `POST     /encounter/wild             -- [AUTH] attempt a wild monster`
-- [ ] `POST     /encounter/challenge/{id}   -- [AUTH] attempt to challenge a player to encounter`
-- [X] `POST     /encounter/surrender        -- [AUTH] forfeit the battle`
-- [X] `GET      /encounter/                 -- [AUTH] get the details of current encounter`
-- [ ] `GET      /encounter/{id}             -- [AUTH] get the status of a battle (possibly spectating)`
+- [X] `POST     /encounter/wild                 -- [AUTH] attempt a wild monster`
+- [X] `POST     /encounter/surrender            -- [AUTH] forfeit the battle`
+- [X] `GET      /encounter/                     -- [AUTH] get the details of current encounter`
+- [ ] `GET      /encounter/{id}                 -- [AUTH] get the status of a battle (possibly spectating)`
+- [X] `POST     /encounter/challenge            -- [AUTH] create challenge against a player`
+- [X] `POST     /encounter/challenge/respond    -- [AUTH] respond to recieved challenge`
+- [X] `POST     /encounter/challenge/cancel     -- [AUTH] attempt to cancel sent challenge`
+- [X] `GET      /encounter/challenges           -- [AUTH] get current player's current sent and received challenges`
 
 battle.py
-- [ ] `POST     /battle/attack              -- [AUTH] attempt an attack`
-- [ ] `POST     /battle/swap                -- [AUTH] attempt to swap monsters`
-- [ ] `POST     /battle/catch               -- [AUTH] attempt to catch wild monster`
-- [X] `GET      /battle/moves               -- [AUTH] get your active monsters moves`
-- [ ] `GET      /battle/                    -- [AUTH] get the status of current battle`
+- [ ] `POST     /battle/attack                  -- [AUTH] attempt an attack`
+- [ ] `POST     /battle/swap                    -- [AUTH] attempt to swap monsters`
+- [ ] `POST     /battle/catch                   -- [AUTH] attempt to catch wild monster`
+- [X] `GET      /battle/moves                   -- [AUTH] get your active monsters moves`
+- [ ] `GET      /battle/                        -- [AUTH] get the status of current battle`
 
 
 Full docs at: `http://localhost:8000/docs`
