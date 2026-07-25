@@ -147,7 +147,8 @@ In order to allow external connections the server computercraft config must allo
 ## Makefile commands
 
 ```bash
-build:           Build the containers fresh
+build-clean:     Build the containers fresh
+build:           Build the containers
 db-command:      Enter postgres container for SQL commands
 down:            Shut the docker containers down
 lint:            Linting fixes to the api directory
@@ -155,7 +156,8 @@ lint-check:      Check for linting issues without fixes
 help:            Show this help message
 logs:            View the logs from the docker containers
 nuke:            Nuke the database and re-seed it
-refresh:         Build the containers fresh then restart them
+refresh:         Build the containers then restart them
+refresh-clean:   Build the containers fresh then restart them
 seed:            Seed the data into the database
 up:              Bring the docker containers up
 client-build:    Build the craftos client image
