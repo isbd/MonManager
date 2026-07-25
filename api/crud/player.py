@@ -39,6 +39,16 @@ async def set_active_encounter_id(
     await db.refresh(player)
 
 
+async def set_player_id_active_encounter_id(
+    db: AsyncSession, player_id: int, encounter_id: Optional[int]
+):
+    """Set a players active encounter id."""
+    player = await get_by_id(db, player_id)
+    player.active_encounter_id = encounter_id
+    await db.commit()
+    await db.refresh(player)
+
+
 async def create(db: AsyncSession, player: PlayerInstance) -> PlayerInstance:
     """Create a player."""
     db.add(player)

@@ -6,9 +6,14 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 
+class EncounterPerspective(Enum):
+    CHALLENGED = "challenged"
+    CHALLENGER = "challenger"
+
+
 class EncounterType(enum.Enum):
-    wild = "wild"
-    pvp = "pvp"
+    WILD = "wild"
+    PVP = "pvp"
 
 
 # TODO: Explore expanding this into separate tables
@@ -25,11 +30,9 @@ class Encounter(Base):
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )
 
-    # Wild only
-    wild_monster_id = Column(Integer, ForeignKey("monster_instances.id"), nullable=True)
-
     # PvP only
     challenged_id = Column(Integer, ForeignKey("player_instances.id"), nullable=True)
+
     challenged_mon_id = Column(
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )

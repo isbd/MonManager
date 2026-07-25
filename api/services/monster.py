@@ -39,8 +39,8 @@ async def create_monster_instance(
     # TODO: Randomize the stats. Optionally set owner_id
     monster = MonsterInstance(
         species_id=species.id,
-        max_hp=4,
-        current_hp=4,
+        max_hp=30,
+        current_hp=30,
         level=1,
         in_party=False,
         owner_id=owner_id,

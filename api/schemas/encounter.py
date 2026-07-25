@@ -26,7 +26,6 @@ class EncounterDetails(BaseModel):
     encounter_type: str
     challenger_id: int
     challenger_mon_id: int
-    wild_monster_id: Optional[int]
     challenged_id: Optional[int]
     challenged_mon_id: Optional[int]
 
