@@ -109,7 +109,7 @@ For cli testing utilize `make client-build` and `make client` to execute a conta
 
 Execution of the client code can be done by executing `test_harness` when in the emulator.
 
-```
+```bash
 > test_harness
 
 === Menu ===
@@ -140,14 +140,42 @@ res.close()
 Most endpoints require an API key that is given upon account creation.
 
 **Note:**
-In order to allow external connections the server computercraft config must allow connections to the endpoints.
+In order to allow external connections **the server computercraft config must allow connections to the endpoints**.
+
+This includes setting the appropriate http rule for the docker container host machine (ex: 192.168.1.123)
+as well as enabling http and websockets. 
+```bash
+    # config/computercraft-server.toml
+    ...
+        [http]
+        enabled = true
+        websocket_enabled = true
+    ...
+        [[http.rules]]
+                host = "192.168.1.123"
+                port = 8000
+                action = "allow"
+    ...
+```
+Firewall rules may apply, check connect-ability with the following
+
+```bash
+    # Check if the server machine can connect
+    curl http://192.168.1.123:8000/docs
+```
+
+```lua
+    -- Check inside computercraft terminal if settings were configured correctly
+    http.get("http://192.168.1.123:8000/docs")
+```
 
 ---
 
 ## Makefile commands
 
 ```bash
-build:           Build the containers fresh
+build-clean:     Build the containers fresh
+build:           Build the containers
 db-command:      Enter postgres container for SQL commands
 down:            Shut the docker containers down
 lint:            Linting fixes to the api directory
@@ -155,7 +183,8 @@ lint-check:      Check for linting issues without fixes
 help:            Show this help message
 logs:            View the logs from the docker containers
 nuke:            Nuke the database and re-seed it
-refresh:         Build the containers fresh then restart them
+refresh:         Build the containers then restart them
+refresh-clean:   Build the containers fresh then restart them
 seed:            Seed the data into the database
 up:              Bring the docker containers up
 client-build:    Build the craftos client image

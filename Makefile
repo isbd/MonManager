@@ -1,8 +1,11 @@
 
 .PHONY: help build up down refresh lint lint-check db-command logs nuke seed client
 
-build: ## Build the containers fresh
+build-clean: ## Build the containers fresh
 	docker compose build --no-cache
+
+build: ## Build the containers
+	docker compose build
 
 db-command: ## Enter postgres container for SQL commands
 	docker exec -it monserver_db psql -U monuser -d mondb
@@ -33,7 +36,11 @@ nuke: ## Nuke the database and re-seed it
 	$(MAKE) refresh
 	$(MAKE) seed
 
-refresh: ## Build the containers fresh then restart them
+refresh-clean: ## Build the containers fresh then restart them
+	$(MAKE) build-clean
+	$(MAKE) up
+
+refresh: ## Build the containers then restart them
 	$(MAKE) build
 	$(MAKE) up
 

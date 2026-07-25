@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, WebSocket, WebSocketException, status
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,7 +7,6 @@ from database import get_db
 from models.player import PlayerInstance
 
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
-
 
 async def get_current_player(
     x_api_key: str = Depends(api_key_header), db: AsyncSession = Depends(get_db)
@@ -21,3 +20,18 @@ async def get_current_player(
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     return player
+
+async def get_current_player_ws(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db),
+) -> PlayerInstance:
+    api_key = websocket.headers.get("x-api-key")
+    if not api_key:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    player = await player_crud.get_by_api_key(db, api_key)
+    if not player:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    return player
+

@@ -2,8 +2,11 @@ local player_api = require("api/player")
 local encounter_api = require("api/encounter")
 local monster_api = require("api/monster")
 local battle_api = require("api/battle")
+local core = require("api/core")
 
 config.set("http_enable", true)
+
+local pending = {}
 
 if not fs.exists("config.json") then
     io.write("Enter your name: ")
@@ -14,6 +17,13 @@ if not fs.exists("config.json") then
         return
     end
     print("Registered as " .. data.name .. "!")
+end
+
+local ws, ws_err = core.connect_ws()
+if ws then
+    print("WebSocket connected.")
+else
+    print("WebSocket failed: " .. tostring(ws_err))
 end
 
 local function print_value(key, value, indent)
@@ -67,25 +77,70 @@ local function prompt_args(arg_names)
     return values
 end
 
-while true do
-    print("\n=== Menu ===")
-    for i, option in ipairs(options) do
-        print(i .. ". " .. option.label)
-    end
-    print("0. Exit")
-
-    io.write("Select: ")
-    local input = tonumber(io.read())
-
-    if input == 0 then
-        print("Goodbye!")
-        break
-    elseif input and options[input] then
-        local selected = options[input]
-        local args = prompt_args(selected.args)
-        print("")
-        display_result(selected.func, selected.label, table.unpack(args))
-    else
-        print("Invalid option.")
+local function drain_notifications()
+    while #pending > 0 do
+        local event = table.remove(pending, 1)
+        if event.type == "challenge_received" then
+            print("\n>>> " .. event.from .. " challenges you!")
+            io.write("Accept? (y/n): ")
+            local answer = io.read()
+            if answer == "y" then
+                encounter_api.respond_challenge(event.from, true)
+                print("Accepted.")
+            else
+                encounter_api.respond_challenge(event.from, false)
+                print("Declined.")
+            end
+        elseif event.type == "your_turn" then
+            print("\n>>> Opponent moved, battle updated.")
+        elseif event.type == "socket_closed" then
+            print("\n>>> Disconnected from server.")
+        else
+            print("\n>>> Unknown event type:".. event.type .."!")
+        end
     end
 end
+
+local function run_menu()
+    while true do
+        drain_notifications()
+        print("\n=== Menu ===")
+        for i, option in ipairs(options) do
+            print(i .. ". " .. option.label)
+        end
+        print("0. Exit")
+
+        io.write("Select: ")
+        local input = tonumber(io.read())
+
+        if input == 0 then
+            print("Goodbye!")
+            break
+        elseif input and options[input] then
+            local selected = options[input]
+            local args = prompt_args(selected.args)
+            print("")
+            display_result(selected.func, selected.label, table.unpack(args))
+        else
+            print("Invalid option.")
+        end
+    end
+end
+
+local function listen()
+    if not ws then
+        while true do os.pullEvent() end
+    end
+    while true do
+        local msg = ws.receive()
+        if msg == nil then
+            print("\n[socket closed]")
+            while true do os.pullEvent() end
+        else
+            local event = textutils.unserialiseJSON(msg)
+            table.insert(pending, event)
+        end
+    end
+end
+
+parallel.waitForAny(run_menu, listen)

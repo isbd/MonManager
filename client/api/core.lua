@@ -1,6 +1,8 @@
 local API_BASE = "http://api:8000"
 local config_path = "config.json"
 
+local WS_BASE = API_BASE:gsub("^http", "ws")
+
 local function load_config()
     if not fs.exists(config_path) then
         return nil
@@ -90,4 +92,18 @@ end
 local function get(path) return request("GET", path) end
 local function post(path, body) return request("POST", path, body or {}) end
 
-return { get = get, post = post, post_unauthed = post_unauthed, save_config = save_config, load_config = load_config }
+local function connect_ws()
+    local key = load_api_key()
+    if not key then
+        return nil, "No API key found. Register first."
+    end
+    local ws, err = http.websocket(WS_BASE .. "/websocket/ws", {
+        ["X-API-Key"] = key
+    })
+    if not ws then
+        return nil, err
+    end
+    return ws
+end
+
+return { get = get, post = post, post_unauthed = post_unauthed, save_config = save_config, load_config = load_config, connect_ws = connect_ws }

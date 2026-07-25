@@ -7,7 +7,7 @@ import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
 from models.base import Base
-from routes import battle, encounter, monster, player
+from routes import battle, encounter, monster, player, websocket
 
 
 @asynccontextmanager
@@ -37,4 +37,11 @@ app.include_router(
     prefix="/battle",
     tags=["Battle"],
     dependencies=[Depends(get_current_player)],
+)
+
+# Websocket status notifier
+app.include_router(
+    websocket.router,
+    prefix="/websocket",
+    tags=["Websocket"]
 )
