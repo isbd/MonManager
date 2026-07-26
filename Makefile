@@ -53,7 +53,10 @@ up: ## Bring the docker containers up
 client-build: ## Build the craftos client image
 	docker compose -f docker-compose.client.yml build craftos
 
-client: ## Start the craftos client
-	docker stop monmanager-craftos 2>/dev/null || true
-	docker rm monmanager-craftos 2>/dev/null || true
-	docker compose -f docker-compose.client.yml run --rm -it --name monmanager-craftos craftos
+CLIENT ?= 1
+
+client: ## Start a craftos client (make client CLIENT=2 for a second)
+	docker stop monmanager-craftos-$(CLIENT) 2>/dev/null || true
+	docker rm monmanager-craftos-$(CLIENT) 2>/dev/null || true
+	docker compose -f docker-compose.client.yml run --rm -it \
+		--name monmanager-craftos-$(CLIENT) craftos

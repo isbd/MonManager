@@ -28,8 +28,6 @@ async def attempt_challenge(
     player: PlayerInstance = Depends(get_current_player),
 ):
     """Attempt to create a challenge encounter."""
-    if player.active_encounter_id:
-        raise HTTPException(status_code=400, detail="Already in an encounter")
 
     return await encounter_service.attempt_challenge(db, player, body.player_id)
 
@@ -41,8 +39,6 @@ async def respond_challenge(
     player: PlayerInstance = Depends(get_current_player),
 ):
     """Respond to a challenge encounter."""
-    if player.active_encounter_id:
-        raise HTTPException(status_code=400, detail="Already in an encounter")
 
     return await encounter_service.challenge_response(
         db, player, body.challenge_id, body.accept

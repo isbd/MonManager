@@ -192,7 +192,7 @@ async def cancel_challenge(
     await player_crud.set_player_id_active_encounter_id(
         db, encounter.challenger_id, None
     )
-    await encounter_crud.delete(encounter)
+    await encounter_crud.delete(db, encounter)
     return ChallengeCancelResponse(success=True, message="Challenge canceled.")
 
 
@@ -262,7 +262,7 @@ async def challenge_response(
         await player_crud.set_player_id_active_encounter_id(
             db, encounter.challenger_id, None
         )
-        await encounter_crud.delete(encounter)
+        await encounter_crud.delete(db, encounter)
         return ChallengeResponse(success=True, message="Challenge rejected.")
 
 
@@ -270,15 +270,15 @@ async def attempt_challenge(
     db, player: PlayerInstance, target_id: int
 ) -> ChallengeEncounterResponse:
     """Attempt to start a pvp encounter."""
+    if player.active_encounter is not None:
+        raise HTTPException(
+            status_code=400, detail="Cannot initiate a challenge with an encounter"
+        )
+
     target_player = await player_crud.get_by_id(db, target_id)
     if not target_player:
         raise HTTPException(
             status_code=404, detail="Target player to challenge not found"
-        )
-
-    if player.active_encounter is not None:
-        raise HTTPException(
-            status_code=400, detail="Cannot initiate a challenge with an encounter"
         )
 
     encounter_details = Encounter(
