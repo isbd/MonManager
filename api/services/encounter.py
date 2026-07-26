@@ -80,7 +80,9 @@ async def get_current_encounter_details(
     return await fetch_player_encounter(db, player)
 
 
-async def notify_opponent(encounter: Encounter, player_id: int, event: EventType, **fields) -> bool:
+async def notify_opponent(
+    encounter: Encounter, player_id: int, event: EventType, **fields
+) -> bool:
     """Send websocket poke to opponent."""
     if encounter.challenger_id == player_id:
         is_notified = await notifier.poke(encounter.challenged_id, event, **fields)

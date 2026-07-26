@@ -13,13 +13,12 @@ from models.encounter import (
     EncounterState,
     EncounterType,
 )
-from schemas.event import EventType
 from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
 from schemas.battle import AttackDetails, BattleResponse, CatchResponse
+from schemas.event import EventType
 from schemas.move import MonsterMoveResponse
-from notifier import notifier
 
 
 async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchResponse:
@@ -94,7 +93,6 @@ async def attempt_attack(
             detail="You already have a move selected.",
         )
 
-
     active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
 
     # TODO: Update dummy attack handling
@@ -110,7 +108,9 @@ async def attempt_attack(
 
             # TODO: May need to adjust if it's possible to have a turn without a move
             if None in (active_turn.challenger_move_id, active_turn.challenged_move_id):
-                await encounter_service.notify_opponent(encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE)
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
+                )
                 return BattleResponse(
                     success=False,
                     active=False,
@@ -119,7 +119,9 @@ async def attempt_attack(
                     challenged_attack=None,
                 )
             else:
-                await encounter_service.notify_opponent(encounter, player.id, EventType.ROUND_RESOLVED)
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_RESOLVED
+                )
                 return await resolve_turn(db, active_turn)
         case _:
             raise HTTPException(
