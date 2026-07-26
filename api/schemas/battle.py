@@ -33,6 +33,7 @@ class BattleResponse(BaseModel):
 
     success: bool
     active: bool
+    pending: bool
     challenger_attack: Optional[AttackDetails]
     challenged_attack: Optional[AttackDetails]
 

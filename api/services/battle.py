@@ -13,11 +13,13 @@ from models.encounter import (
     EncounterState,
     EncounterType,
 )
+from schemas.event import EventType
 from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
 from schemas.battle import AttackDetails, BattleResponse, CatchResponse
 from schemas.move import MonsterMoveResponse
+from notifier import notifier
 
 
 async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchResponse:
@@ -74,6 +76,13 @@ async def attempt_attack(
     active_perspective = encounter_service.get_encounter_perspective(
         encounter, player.id
     )
+
+    if active_perspective is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to grab active perspective.",
+        )
+
     active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
 
     # TODO: Update dummy attack handling
@@ -83,10 +92,29 @@ async def attempt_attack(
             active_turn = await set_turn_move(
                 db, active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
             )
-            # RETURN Resolve turn
             return await resolve_turn(db, active_turn)
         case EncounterType.PVP:
-            pass
+            await battle_crud.update_instance(db, active_turn)
+
+            # TODO: May need to adjust if it's possible to have a turn without a move
+            if None in (active_turn.challenger_move_id, active_turn.challenged_move_id):
+                if active_perspective is EncounterPerspective.CHALLENGER:
+                    await notifier.poke(encounter.challenged_id, EventType.ROUND_PENDING_YOUR_MOVE)
+                else:
+                    await notifier.poke(encounter.challenger_id, EventType.ROUND_PENDING_YOUR_MOVE)
+                return BattleResponse(
+                    success=False,
+                    active=False,
+                    pending=True,
+                    challenger_attack=None,
+                    challenged_attack=None,
+                )
+            else:
+                if active_perspective is EncounterPerspective.CHALLENGER:
+                    await notifier.poke(encounter.challenged_id, EventType.ROUND_RESOLVED)
+                else:
+                    await notifier.poke(encounter.challenger_id, EventType.ROUND_RESOLVED)
+                return await resolve_turn(db, active_turn)
         case _:
             raise HTTPException(
                 status_code=500,
@@ -95,6 +123,7 @@ async def attempt_attack(
     return BattleResponse(
         success=False,
         active=False,
+        pending=False,
         challenger_attack=None,
         challenged_attack=None,
     )
@@ -119,7 +148,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     challenged_attack = await resolve_attack(
         db, challenged_mon, challenger_mon, challenged_move
     )
-    if challenged_attack == -1:
+    if challenged_attack.missed:
         turn.challenged_move_missed = challenged_attack.missed
     else:
         turn.challenged_damage_dealt = challenged_attack.damage_dealt
@@ -130,6 +159,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
         return BattleResponse(
             success=True,
             active=False,
+            pending=False,
             challenger_attack=None,
             challenged_attack=challenged_attack,
         )
@@ -147,6 +177,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
         return BattleResponse(
             success=True,
             active=False,
+            pending=False,
             challenger_attack=challenger_attack,
             challenged_attack=challenged_attack,
         )
@@ -157,6 +188,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     return BattleResponse(
         success=True,
         active=True,
+        pending=False,
         challenger_attack=challenger_attack,
         challenged_attack=challenged_attack,
     )

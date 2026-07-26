@@ -229,10 +229,11 @@ async def challenge_response(
             )
 
         encounter.active = EncounterState.ACTIVE
-        encounter.challenger_id = challenger_mon
-        encounter.challenged_mon_id = challenged_mon
+        encounter.challenged_id = player.id
+        encounter.challenger_mon_id = challenger_mon.id
+        encounter.challenged_mon_id = challenged_mon.id
         await encounter_crud.update_instance(db, encounter)
-        await player_crud.set_active_encounter_id(db, encounter.id)
+        await player_crud.set_active_encounter_id(db, player, encounter.id)
         is_notified = await notifier.poke(
             encounter.challenger_id,
             EventType.CHALLENGE_RESPONSE,
