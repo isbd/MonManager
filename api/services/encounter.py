@@ -61,12 +61,12 @@ async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderRespon
             )
         case EncounterType.PVP:
             # TODO: Flush this out more
-            # PVP
-            # Ensure both challenger/challenged have null active encounters
-            # Set challenger.active_encounter_id
-            # Set challenged.active_encounter_id
+            # TODO: May need to update notifier to include rewards gained
+            await notify_opponent(encounter, player.id, EventType.BATTLE_FORFEITED)
+            await player_crud.set_active_encounter_id(db, encounter.challenger_id, None)
+            await player_crud.set_active_encounter_id(db, encounter.challenged_id, None)
+            await resolve_encounter(db, encounter)
 
-            # Once encounter is over, must null the active_encounter!
             raise HTTPException(
                 status_code=500, detail="Invalid pvp encounter. Not made yet"
             )
@@ -80,9 +80,23 @@ async def get_current_encounter_details(
     return await fetch_player_encounter(db, player)
 
 
+async def notify_opponent(encounter: Encounter, player_id: int, event: EventType, **fields) -> bool:
+    """Send websocket poke to opponent."""
+    if encounter.challenger_id == player_id:
+        is_notified = await notifier.poke(encounter.challenged_id, event, **fields)
+    elif encounter.challenged_id == player_id:
+        is_notified = await notifier.poke(encounter.challenger_id, event, **fields)
+    else:
+        raise HTTPException(
+            status_code=500, detail="Encounter perspective not found to notify opponent"
+        )
+    return is_notified
+
+
 def get_encounter_perspective(
     encounter: Encounter, player_id: int
 ) -> Optional[EncounterPerspective]:
+    """Get the players perspective for the encounter."""
     if encounter.challenged_id == player_id:
         return EncounterPerspective.CHALLENGED
     elif encounter.challenger_id == player_id:

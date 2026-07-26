@@ -60,7 +60,7 @@ async def attempt_attack(
         # TODO: Alternative handling when not active
         raise HTTPException(
             status_code=400,
-            detail="Encounter is not longer active, update code for handle.",
+            detail="Encounter is no longer active, update code for handle.",
         )
 
     move = await move_crud.get_monster_move_by_slot(
@@ -83,6 +83,18 @@ async def attempt_attack(
             detail="Failed to grab active perspective.",
         )
 
+    is_already_submitted = (
+        active_turn.challenger_move_id is not None
+        if active_perspective is EncounterPerspective.CHALLENGER
+        else active_turn.challenged_move_id is not None
+    )
+    if is_already_submitted:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have a move selected.",
+        )
+
+
     active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
 
     # TODO: Update dummy attack handling
@@ -98,10 +110,7 @@ async def attempt_attack(
 
             # TODO: May need to adjust if it's possible to have a turn without a move
             if None in (active_turn.challenger_move_id, active_turn.challenged_move_id):
-                if active_perspective is EncounterPerspective.CHALLENGER:
-                    await notifier.poke(encounter.challenged_id, EventType.ROUND_PENDING_YOUR_MOVE)
-                else:
-                    await notifier.poke(encounter.challenger_id, EventType.ROUND_PENDING_YOUR_MOVE)
+                await encounter_service.notify_opponent(encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE)
                 return BattleResponse(
                     success=False,
                     active=False,
@@ -110,10 +119,7 @@ async def attempt_attack(
                     challenged_attack=None,
                 )
             else:
-                if active_perspective is EncounterPerspective.CHALLENGER:
-                    await notifier.poke(encounter.challenged_id, EventType.ROUND_RESOLVED)
-                else:
-                    await notifier.poke(encounter.challenger_id, EventType.ROUND_RESOLVED)
+                await encounter_service.notify_opponent(encounter, player.id, EventType.ROUND_RESOLVED)
                 return await resolve_turn(db, active_turn)
         case _:
             raise HTTPException(
