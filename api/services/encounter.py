@@ -63,13 +63,15 @@ async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderRespon
             # TODO: Flush this out more
             # TODO: May need to update notifier to include rewards gained
             await notify_opponent(encounter, player.id, EventType.BATTLE_FORFEITED)
-            await player_crud.set_player_id_active_encounter_id(db, encounter.challenger_id, None)
-            await player_crud.set_player_id_active_encounter_id(db, encounter.challenged_id, None)
+            await player_crud.set_player_id_active_encounter_id(
+                db, encounter.challenger_id, None
+            )
+            await player_crud.set_player_id_active_encounter_id(
+                db, encounter.challenged_id, None
+            )
             await resolve_encounter(db, encounter)
 
-            return SurrenderResponse(
-                success=True, message="Surrendered pvp encounter!"
-            )
+            return SurrenderResponse(success=True, message="Surrendered pvp encounter!")
         case _:
             raise HTTPException(status_code=500, detail="Invalid encounter")
 
