@@ -7,11 +7,17 @@ import services.encounter as encounter_service
 import services.move as move_service
 from crud import battle_crud, encounter_crud, monster_crud, move_crud, player_crud
 from models.battle import BattleTurn
-from models.encounter import Encounter, EncounterPerspective, EncounterType
+from models.encounter import (
+    Encounter,
+    EncounterPerspective,
+    EncounterState,
+    EncounterType,
+)
 from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
 from schemas.battle import AttackDetails, BattleResponse, CatchResponse
+from schemas.event import EventType
 from schemas.move import MonsterMoveResponse
 
 
@@ -49,11 +55,11 @@ async def attempt_attack(
     """Attempt to attack."""
     encounter = await encounter_service.fetch_player_encounter(db, player)
 
-    if encounter.active is False:
+    if encounter.active is not EncounterState.ACTIVE:
         # TODO: Alternative handling when not active
         raise HTTPException(
             status_code=400,
-            detail="Encounter is not longer active, update code for handle.",
+            detail="Encounter is no longer active, update code for handle.",
         )
 
     move = await move_crud.get_monster_move_by_slot(
@@ -69,6 +75,24 @@ async def attempt_attack(
     active_perspective = encounter_service.get_encounter_perspective(
         encounter, player.id
     )
+
+    if active_perspective is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to grab active perspective.",
+        )
+
+    is_already_submitted = (
+        active_turn.challenger_move_id is not None
+        if active_perspective is EncounterPerspective.CHALLENGER
+        else active_turn.challenged_move_id is not None
+    )
+    if is_already_submitted:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have a move selected.",
+        )
+
     active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
 
     # TODO: Update dummy attack handling
@@ -78,10 +102,27 @@ async def attempt_attack(
             active_turn = await set_turn_move(
                 db, active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
             )
-            # RETURN Resolve turn
             return await resolve_turn(db, active_turn)
         case EncounterType.PVP:
-            pass
+            await battle_crud.update_instance(db, active_turn)
+
+            # TODO: May need to adjust if it's possible to have a turn without a move
+            if None in (active_turn.challenger_move_id, active_turn.challenged_move_id):
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
+                )
+                return BattleResponse(
+                    success=False,
+                    active=False,
+                    pending=True,
+                    challenger_attack=None,
+                    challenged_attack=None,
+                )
+            else:
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_RESOLVED
+                )
+                return await resolve_turn(db, active_turn)
         case _:
             raise HTTPException(
                 status_code=500,
@@ -90,6 +131,7 @@ async def attempt_attack(
     return BattleResponse(
         success=False,
         active=False,
+        pending=False,
         challenger_attack=None,
         challenged_attack=None,
     )
@@ -114,7 +156,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     challenged_attack = await resolve_attack(
         db, challenged_mon, challenger_mon, challenged_move
     )
-    if challenged_attack == -1:
+    if challenged_attack.missed:
         turn.challenged_move_missed = challenged_attack.missed
     else:
         turn.challenged_damage_dealt = challenged_attack.damage_dealt
@@ -125,6 +167,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
         return BattleResponse(
             success=True,
             active=False,
+            pending=False,
             challenger_attack=None,
             challenged_attack=challenged_attack,
         )
@@ -142,6 +185,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
         return BattleResponse(
             success=True,
             active=False,
+            pending=False,
             challenger_attack=challenger_attack,
             challenged_attack=challenged_attack,
         )
@@ -152,6 +196,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     return BattleResponse(
         success=True,
         active=True,
+        pending=False,
         challenger_attack=challenger_attack,
         challenged_attack=challenged_attack,
     )
@@ -161,7 +206,7 @@ async def resolve_battle(db: AsyncSession, turn: BattleTurn):
     """Conclude the battle."""
     # TODO: Better handling for battles
     encounter = await encounter_crud.get_by_id(db, turn.encounter_id)
-    encounter.active = False
+    encounter.active = EncounterState.COMPLETED
     turn.resolved = True
     await battle_crud.update_instance(db, turn)
     await player_crud.set_player_id_active_encounter_id(

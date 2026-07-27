@@ -1,14 +1,21 @@
+local args = { ... }
+local config_file = args[1] or "config.json"
 local player_api = require("api/player")
 local encounter_api = require("api/encounter")
 local monster_api = require("api/monster")
 local battle_api = require("api/battle")
 local core = require("api/core")
 
+if config_file then
+    core.set_config_path(config_file)
+    print("Using config:" .. config_file)
+end
+
 config.set("http_enable", true)
 
 local pending = {}
 
-if not fs.exists("config.json") then
+if not fs.exists(config_file) then
     io.write("Enter your name: ")
     local name = io.read()
     local data = player_api.register(name)
@@ -65,6 +72,11 @@ local options = {
     { label = "Moves",                  func = battle_api.get_moves },
     { label = "Player Monsters",        func = monster_api.get_monsters },
     { label = "Monster Info",           func = monster_api.get_monster, args = { "Monster ID" } },
+
+    { label = "Challenge",              func = encounter_api.challenge, args = { "Player ID" } },
+    { label = "Challenge Respond",      func = encounter_api.respond_challenge, args = { "Challenge ID", "Accept?" } },
+    { label = "Challenge Cancel",       func = encounter_api.cancel_challenge, args = { "Challenge ID" } },
+    { label = "Challenges",             func = encounter_api.challenges },
 }
 
 local function prompt_args(arg_names)

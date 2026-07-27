@@ -1,12 +1,20 @@
 import enum
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer
+from sqlalchemy import Column, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from .base import Base
 
 
-class EncounterPerspective(Enum):
+class EncounterState(enum.Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    DECLINED = "declined"
+    EXPIRED = "expired"
+    COMPLETED = "completed"
+
+
+class EncounterPerspective(enum.Enum):
     CHALLENGED = "challenged"
     CHALLENGER = "challenger"
 
@@ -21,7 +29,7 @@ class Encounter(Base):
     __tablename__ = "encounters"
 
     id = Column(Integer, primary_key=True)
-    active = Column(Boolean, nullable=False)
+    active = Column(Enum(EncounterState), nullable=False)
     encounter_type = Column(Enum(EncounterType), nullable=False)
 
     # Shared
@@ -32,7 +40,6 @@ class Encounter(Base):
 
     # PvP only
     challenged_id = Column(Integer, ForeignKey("player_instances.id"), nullable=True)
-
     challenged_mon_id = Column(
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )

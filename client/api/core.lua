@@ -3,6 +3,10 @@ local config_path = "config.json"
 
 local WS_BASE = API_BASE:gsub("^http", "ws")
 
+local function set_config_path(path)
+    config_path = path
+end
+
 local function load_config()
     if not fs.exists(config_path) then
         return nil
@@ -106,4 +110,11 @@ local function connect_ws()
     return ws
 end
 
-return { get = get, post = post, post_unauthed = post_unauthed, save_config = save_config, load_config = load_config, connect_ws = connect_ws }
+return {
+    get = get, post = post,
+    post_unauthed = post_unauthed,
+    save_config = save_config,
+    load_config = load_config,
+    connect_ws = connect_ws,
+    set_config_path = set_config_path
+}

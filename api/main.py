@@ -40,8 +40,4 @@ app.include_router(
 )
 
 # Websocket status notifier
-app.include_router(
-    websocket.router,
-    prefix="/websocket",
-    tags=["Websocket"]
-)
+app.include_router(websocket.router, prefix="/websocket", tags=["Websocket"])
