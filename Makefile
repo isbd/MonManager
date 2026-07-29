@@ -1,5 +1,5 @@
 
-.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client
+.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client client-lint
 
 build-clean: ## Build the containers fresh
 	docker compose build --no-cache
@@ -64,6 +64,12 @@ endif
 
 client-build: ## Build the craftos client image
 	docker compose -f docker-compose.client.yml build craftos
+
+client-lint:
+	docker run --rm -v "$(CURDIR)":/code:z -w /code \
+	  --user "$$(id -u):$$(id -g)" \
+	  pipelinecomponents/luacheck:latest \
+	  --config /code/.luacheckrc client
 
 client: ## Start a client (CLIENT=2, POCKET=1, or WIDTH=n HEIGHT=n)
 	@xhost +SI:localuser:root >/dev/null

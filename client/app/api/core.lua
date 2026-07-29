@@ -3,11 +3,13 @@ local config_path = "config.json"
 
 local WS_BASE = API_BASE:gsub("^http", "ws")
 
-local function set_config_path(path)
+local M = {}
+
+function M.set_config_path(path)
     config_path = path
 end
 
-local function load_config()
+function M.load_config()
     if not fs.exists(config_path) then
         return nil
     end
@@ -17,19 +19,19 @@ local function load_config()
     return data
 end
 
-local function save_config(data)
+function M.save_config(data)
     local f = fs.open(config_path, "w")
     f.write(textutils.serialiseJSON(data))
     f.close()
 end
 
-local function load_api_key()
-    local config = load_config()
+function M.load_api_key()
+    local config = M.load_config()
     if not config then return nil end
     return config.api_key
 end
 
-local function post_unauthed(path, body)
+function M.post_unauthed(path, body)
     local url = API_BASE .. path
     http.request({
         url = url,
@@ -50,8 +52,8 @@ local function post_unauthed(path, body)
     end
 end
 
-local function request(method, path, body)
-    local key = load_api_key()
+function M.request(method, path, body)
+    local key = M.load_api_key()
     if not key then
         error("No API key found. Register first.")
     end
@@ -93,11 +95,11 @@ local function request(method, path, body)
     end
 end
 
-local function get(path) return request("GET", path) end
-local function post(path, body) return request("POST", path, body or {}) end
+function M.get(path) return M.request("GET", path) end
+function M.post(path, body) return M.request("POST", path, body or {}) end
 
-local function connect_ws()
-    local key = load_api_key()
+function M.connect_ws()
+    local key = M.load_api_key()
     if not key then
         return nil, "No API key found. Register first."
     end
@@ -110,11 +112,4 @@ local function connect_ws()
     return ws
 end
 
-return {
-    get = get, post = post,
-    post_unauthed = post_unauthed,
-    save_config = save_config,
-    load_config = load_config,
-    connect_ws = connect_ws,
-    set_config_path = set_config_path
-}
+return M
