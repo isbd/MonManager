@@ -1,7 +1,8 @@
-local ui = require("app.ui")
+local ui = require("app.ui.ui")
 local M = {}
 
 function M.load(state, ctx)
+    -- load actions
 end
 
 function M.draw(state)
@@ -30,6 +31,10 @@ end
 
 function M.handle(state, action, ctx)
     -- screen-specific actions
+end
+
+function M.onKey(state, ev, p1, ctx)
+
 end
 
 return M
