@@ -105,7 +105,7 @@ encounter.py
 - [X] `GET      /encounter/                     -- [AUTH] get the details of current encounter`
 - [ ] `GET      /encounter/{id}                 -- [AUTH] get the status of a battle (possibly spectating)`
 - [X] `POST     /encounter/challenge            -- [AUTH] create challenge against a player`
-- [X] `POST     /encounter/challenge/respond    -- [AUTH] respond to recieved challenge`
+- [X] `POST     /encounter/challenge/respond    -- [AUTH] respond to received challenge`
 - [X] `POST     /encounter/challenge/cancel     -- [AUTH] attempt to cancel sent challenge`
 - [X] `GET      /encounter/challenges           -- [AUTH] get current player's current sent and received challenges`
 

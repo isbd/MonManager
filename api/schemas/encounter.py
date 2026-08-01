@@ -45,7 +45,7 @@ class ChallengeDetails(BaseModel):
 class ChallengeList(BaseModel):
     """Current challenges."""
 
-    recieved_challenges: List[ChallengeDetails]
+    received_challenges: List[ChallengeDetails]
     sent_challenge: Optional[ChallengeDetails]
 
 
