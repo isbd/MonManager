@@ -65,8 +65,9 @@ end
 
 function M.onKey(state, ev, p1, ctx)
     if ev == "key" then
-        if p1 == keys.a   then return "increase" end
-        if p1 == keys.d   then return "decrease" end
+        if p1 == keys.a then return "increase" end
+        if p1 == keys.d then return "decrease" end
+        if p1 == keys.q then return "goto:menu" end
     end
 end
 

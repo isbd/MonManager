@@ -29,12 +29,10 @@ function M.draw(state)
     ui.renderWindowMessage(bar, "BAR TEST", colors.gray, colors.yellow)
 end
 
-function M.handle(state, action, ctx)
-    -- screen-specific actions
-end
-
 function M.onKey(state, ev, p1, ctx)
-
+    if ev == "key" and p1 == keys.q then
+        return "goto:menu"
+    end
 end
 
 return M

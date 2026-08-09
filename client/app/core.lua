@@ -2,6 +2,7 @@ local ui = require("app.ui.ui")
 local M = {}
 
 local api = require("app.api.core")
+local config_file = "config.json"
 
 local screens = {
     menu  = require("app.screens.menu"),
@@ -33,16 +34,16 @@ local function dispatch(action)
 
     if action == "quit" then
         state.running = false
-    elseif type(action) == "table" then
-        if scr.handle then scr.handle(state, action, ctx) end
-        state.dirty = true
-        return
-    elseif action:sub(1, 5) == "goto:" then
+    elseif type(action) == "string" and action:sub(1, 5) == "goto:" then
         navigate(action:sub(6))
-
-    if scr.handle then scr.handle(state, action, ctx) end
-        state.dirty = true
+    elseif scr and scr.handle then
+        local next_action = scr.handle(state, action, ctx)
+        if next_action then
+            state.dirty = true
+            return dispatch(next_action)
+        end
     end
+    state.dirty = true
 end
 
 function ctx.setTimer(seconds, action)
@@ -59,7 +60,6 @@ local function startup()
     config.set("http_enable", true)
     local player_api = require("app.api.player")
 
-    local config_file = "config.json"
     if not fs.exists(config_file) then
         io.write("Enter your name: ")
         local name = io.read()
@@ -67,24 +67,28 @@ local function startup()
         if not data then
             error("Registration failed.")
         end
-        print("Registered as " .. data.name .. "!")
+        term.write("Registered as " .. data.name .. "!")
         os.sleep(1)
     end
 
     local ws, ws_err = api.connect_ws()
     if ws then
-        print("WebSocket connected.")
+        term.write("WebSocket connected.")
     else
         os.error("WebSocket failed: " .. tostring(ws_err))
     end
     os.sleep(1)
+    ctx.ws = ws
+    ctx.ws_opened_at = os.clock()
 
     navigate("menu")
     state.running = true
 end
 
-function M.run()
+function M.run(config)
     startup()
+
+    config_file = config
 
     while state.running do
         if state.dirty then
@@ -104,11 +108,13 @@ function M.run()
             end
         elseif ev == "websocket_message" then
             -- websocket handling
-            term.setBackgroundColor(colors.black)
-            term.clear()
-            term.setCursorPos(1, 1)
-            print("NOTIFICATION!")
-            os.sleep(1)
+            local scr = screens[state.screen]
+            term.write(p1.message)
+            if scr.eventHandler then
+                scr.eventHandler(state, ev, p1, p3)
+            end
+        elseif ev == "websocket_closed" then
+            os.error("WebSocket failed: ".. tostring(p3))
         elseif ev == "timer" then
             local action = ctx.timers[p1]
             if action then

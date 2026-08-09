@@ -69,7 +69,7 @@ function PanelList:drawScrollbar()
     end
 
     term.setBackgroundColor(colors.white)
-    term.setCursorPos(bar_x, markerRow)
+    term.setCursorPos(bar_x, marker_row)
     term.write(" ")
 
     term.setBackgroundColor(colors.black)

@@ -34,7 +34,9 @@ function M.handle(state, action, ctx)
 end
 
 function M.onKey(state, ev, p1, ctx)
-
+    if ev == "key" and p1 == keys.q then
+        return "goto:menu"
+    end
 end
 
 return M

@@ -8,7 +8,6 @@ end
 function M.draw(state)
     term.setCursorPos(2, 1)
     term.write("== Party ==")
-    -- Reference state.<party> to retrieve
     if not state.party then
         term.setCursorPos(2, 3)
         term.write("Failed to load :(")

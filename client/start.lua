@@ -1,2 +1,6 @@
 local core = require("app.core")
-core.run()
+
+local args = { ... }
+local config_file = args[1] or "config.json"
+
+core.run(config_file)

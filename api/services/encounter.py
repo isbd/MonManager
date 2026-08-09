@@ -200,17 +200,19 @@ async def cancel_challenge(
     is_notified = await notifier.poke(
         encounter.challenged_id, EventType.CHALLENGE_CANCELED, challenge_id=encounter.id
     )
-    if not is_notified:
-        return ChallengeCancelResponse(
-            success=True,
-            message="Challenge rejected but failed to notify opponent",
-        )
+
     # Deleting encounter but may require state later
     encounter.active = EncounterState.EXPIRED
     await player_crud.set_player_id_active_encounter_id(
         db, encounter.challenger_id, None
     )
     await encounter_crud.delete(db, encounter)
+
+    if not is_notified:
+        return ChallengeCancelResponse(
+            success=True,
+            message="Challenge rejected but failed to notify opponent",
+        )
     return ChallengeCancelResponse(success=True, message="Challenge canceled.")
 
 
@@ -314,12 +316,12 @@ async def attempt_challenge(
     is_notified = await notifier.poke(
         target_id, EventType.CHALLENGE_RECEIVED, challenge_id=encounter.id
     )
-    if not is_notified:
-        await encounter_crud.delete(db, encounter)
-        return ChallengeEncounterResponse(
-            success=False, message="Opponent is not connected!"
-        )
 
     await player_crud.set_active_encounter_id(db, player, encounter.id)
+
+    if not is_notified:
+        return ChallengeEncounterResponse(
+            success=True, message="Opponent is not connected!"
+        )
 
     return ChallengeEncounterResponse(success=True, message="Challenge awaiting")
