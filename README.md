@@ -207,10 +207,12 @@ lint-check:      Check for linting issues without fixes
 help:            Show this help message
 logs:            View the logs from the docker containers
 nuke:            Nuke the database and re-seed it
-refresh:         Build the containers then restart them
 refresh-clean:   Build the containers fresh then restart them
+refresh:         Build the containers then restart them
 seed:            Seed the data into the database
 up:              Bring the docker containers up
 client-build:    Build the craftos client image
-client:          Start the craftos client
+client:          Start a client (CLIENT=2, POCKET=1, or WIDTH=n HEIGHT=n)
+pocket:          Shortcut for a pocket-sized client
+kill-clients:    Kills all craftos client containers
 ```
