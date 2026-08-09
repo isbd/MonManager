@@ -1,10 +1,10 @@
 local args = { ... }
 local config_file = args[1] or "config.json"
-local player_api = require("api/player")
-local encounter_api = require("api/encounter")
-local monster_api = require("api/monster")
-local battle_api = require("api/battle")
-local core = require("api/core")
+local player_api = require("app.api.player")
+local encounter_api = require("app.api.encounter")
+local monster_api = require("app.api.monster")
+local battle_api = require("app.api.battle")
+local core = require("app.api.core")
 
 if config_file then
     core.set_config_path(config_file)

@@ -4,7 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile.craftos
     volumes:
-      - ./client:/craftos-data/computer/0:z
+      - ./client:/craftos-data/computer/${CRAFTOS_ID:-0}:z
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      DISPLAY: ${DISPLAY}
+      SDL_VIDEODRIVER: x11
+      CRAFTOS_ID: ${CRAFTOS_ID:-0}
+      CRAFTOS_WIDTH: ${CRAFTOS_WIDTH:-51}
+      CRAFTOS_HEIGHT: ${CRAFTOS_HEIGHT:-19}
+    ipc: host
     networks:
       - monmanager_monnet
 

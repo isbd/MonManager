@@ -105,7 +105,7 @@ encounter.py
 - [X] `GET      /encounter/                     -- [AUTH] get the details of current encounter`
 - [ ] `GET      /encounter/{id}                 -- [AUTH] get the status of a battle (possibly spectating)`
 - [X] `POST     /encounter/challenge            -- [AUTH] create challenge against a player`
-- [X] `POST     /encounter/challenge/respond    -- [AUTH] respond to recieved challenge`
+- [X] `POST     /encounter/challenge/respond    -- [AUTH] respond to received challenge`
 - [X] `POST     /encounter/challenge/cancel     -- [AUTH] attempt to cancel sent challenge`
 - [X] `GET      /encounter/challenges           -- [AUTH] get current player's current sent and received challenges`
 
@@ -207,10 +207,12 @@ lint-check:      Check for linting issues without fixes
 help:            Show this help message
 logs:            View the logs from the docker containers
 nuke:            Nuke the database and re-seed it
-refresh:         Build the containers then restart them
 refresh-clean:   Build the containers fresh then restart them
+refresh:         Build the containers then restart them
 seed:            Seed the data into the database
 up:              Bring the docker containers up
 client-build:    Build the craftos client image
-client:          Start the craftos client
+client:          Start a client (CLIENT=2, POCKET=1, or WIDTH=n HEIGHT=n)
+pocket:          Shortcut for a pocket-sized client
+kill-clients:    Kills all craftos client containers
 ```

@@ -1,5 +1,5 @@
 
-.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client
+.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client client-lint
 
 build-clean: ## Build the containers fresh
 	docker compose build --no-cache
@@ -50,13 +50,38 @@ seed: ## Seed the data into the database
 up: ## Bring the docker containers up
 	docker compose up -d
 
+# Emulator
+
+CLIENT ?= 1
+ID     ?= $(CLIENT)
+WIDTH  ?= 51
+HEIGHT ?= 19
+
+ifdef POCKET
+WIDTH  := 26
+HEIGHT := 20
+endif
+
 client-build: ## Build the craftos client image
 	docker compose -f docker-compose.client.yml build craftos
 
-CLIENT ?= 1
+client-lint:
+	docker run --rm -v "$(CURDIR)":/code:z -w /code \
+	  --user "$$(id -u):$$(id -g)" \
+	  pipelinecomponents/luacheck:latest \
+	  --config /code/.luacheckrc client
 
-client: ## Start a craftos client (make client CLIENT=2 for a second)
+client: ## Start a client (CLIENT=2, POCKET=1, or WIDTH=n HEIGHT=n)
+	@xhost +SI:localuser:root >/dev/null
 	docker stop monmanager-craftos-$(CLIENT) 2>/dev/null || true
 	docker rm monmanager-craftos-$(CLIENT) 2>/dev/null || true
+	CRAFTOS_ID=$(ID) CRAFTOS_WIDTH=$(WIDTH) CRAFTOS_HEIGHT=$(HEIGHT) \
 	docker compose -f docker-compose.client.yml run --rm -it \
 		--name monmanager-craftos-$(CLIENT) craftos
+	@xhost -SI:localuser:root >/dev/null
+
+pocket: ## Shortcut for a pocket-sized client
+	@$(MAKE) client POCKET=1
+
+kill-clients: ## Kills all craftos client containers
+	docker kill $$(docker ps -q --filter "name=monmanager-craftos-*")

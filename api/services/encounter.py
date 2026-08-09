@@ -172,7 +172,7 @@ async def current_challenges(db, player: PlayerInstance) -> ChallengeList:
         )
 
     return ChallengeList(
-        recieved_challenges=received_challenges, sent_challenge=sent_challenges
+        received_challenges=received_challenges, sent_challenge=sent_challenges
     )
 
 
@@ -187,7 +187,7 @@ async def cancel_challenge(
             status_code=404, detail="Attempted response on stale challenge"
         )
 
-    if encounter.challenger_id is not player.id:
+    if encounter.challenger_id != player.id:
         raise HTTPException(
             status_code=400, detail="Only the challenger can cancel the challenge"
         )
@@ -197,20 +197,22 @@ async def cancel_challenge(
             status_code=400, detail="Cannot cancel challenge for active encounter"
         )
 
-    is_notified = await notifier.poke(
-        encounter.challenged_id, EventType.CHALLENGE_CANCELED, challenge_id=encounter.id
-    )
-    if not is_notified:
-        return ChallengeCancelResponse(
-            success=True,
-            message="Challenge rejected but failed to notify opponent",
-        )
     # Deleting encounter but may require state later
     encounter.active = EncounterState.EXPIRED
     await player_crud.set_player_id_active_encounter_id(
         db, encounter.challenger_id, None
     )
     await encounter_crud.delete(db, encounter)
+
+    is_notified = await notifier.poke(
+        encounter.challenged_id, EventType.CHALLENGE_CANCELED, challenge_id=encounter.id
+    )
+
+    if not is_notified:
+        return ChallengeCancelResponse(
+            success=True,
+            message="Challenge rejected but failed to notify opponent",
+        )
     return ChallengeCancelResponse(success=True, message="Challenge canceled.")
 
 
@@ -225,10 +227,10 @@ async def challenge_response(
             status_code=404, detail="Attempted response on stale challenge"
         )
 
-    if encounter.challenged_id is not player.id:
+    if encounter.challenged_id != player.id:
         raise HTTPException(status_code=400, detail="Challenge was not issued to you")
 
-    if player.active_encounter is not None:
+    if player.active_encounter_id is not None:
         raise HTTPException(
             status_code=400, detail="Cannot respond to challenge while inside encounter"
         )
@@ -289,7 +291,7 @@ async def attempt_challenge(
     db, player: PlayerInstance, target_id: int
 ) -> ChallengeEncounterResponse:
     """Attempt to start a pvp encounter."""
-    if player.active_encounter is not None:
+    if player.active_encounter_id is not None:
         raise HTTPException(
             status_code=400, detail="Cannot initiate a challenge with an encounter"
         )
@@ -314,12 +316,12 @@ async def attempt_challenge(
     is_notified = await notifier.poke(
         target_id, EventType.CHALLENGE_RECEIVED, challenge_id=encounter.id
     )
-    if not is_notified:
-        await encounter_crud.delete(db, encounter)
-        return ChallengeEncounterResponse(
-            success=False, message="Opponent is not connected!"
-        )
 
     await player_crud.set_active_encounter_id(db, player, encounter.id)
+
+    if not is_notified:
+        return ChallengeEncounterResponse(
+            success=True, message="Opponent is not connected!"
+        )
 
     return ChallengeEncounterResponse(success=True, message="Challenge awaiting")
