@@ -25,6 +25,12 @@ function M.save_config(data)
     f.close()
 end
 
+function M.load_player_id()
+    local config = M.load_config()
+    if not config then return nil end
+    return config.player_id
+end
+
 function M.load_api_key()
     local config = M.load_config()
     if not config then return nil end

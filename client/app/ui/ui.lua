@@ -5,7 +5,9 @@ M.width, M.height = term.getSize()
 function M.reset()
     M.buttons = {}
     term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
     term.clear()
+    term.setCursorPos(1, 1)
 end
 
 function M.button(x, y, label, action, color_text, color_bg)

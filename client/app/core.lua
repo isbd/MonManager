@@ -2,7 +2,7 @@ local ui = require("app.ui.ui")
 local M = {}
 
 local api = require("app.api.core")
-local config_file = "config.json"
+local config_path = nil
 
 local screens = {
     menu  = require("app.screens.menu"),
@@ -60,7 +60,13 @@ local function startup()
     config.set("http_enable", true)
     local player_api = require("app.api.player")
 
-    if not fs.exists(config_file) then
+    if config_path then
+        api.set_config_path(config_path)
+        print("Using config:" .. config_path)
+        os.sleep(1)
+    end
+
+    if not fs.exists(config_path) then
         io.write("Enter your name: ")
         local name = io.read()
         local data = player_api.register(name)
@@ -68,8 +74,9 @@ local function startup()
             error("Registration failed.")
         end
         term.write("Registered as " .. data.name .. "!")
-        os.sleep(1)
+        os.sleep(.5)
     end
+    term.write("Logging in with ".. config_path)
 
     local ws, ws_err = api.connect_ws()
     if ws then
@@ -77,8 +84,9 @@ local function startup()
     else
         os.error("WebSocket failed: " .. tostring(ws_err))
     end
-    os.sleep(1)
+    os.sleep(.5)
     ctx.ws = ws
+    ctx.player_id = api.load_player_id()
     ctx.ws_opened_at = os.clock()
 
     navigate("menu")
@@ -86,9 +94,8 @@ local function startup()
 end
 
 function M.run(config)
+    config_path = config
     startup()
-
-    config_file = config
 
     while state.running do
         if state.dirty then
@@ -103,15 +110,18 @@ function M.run(config)
         elseif ev == "mouse_scroll" then
             local scr = screens[state.screen]
             if scr.onScroll then
-                scr.onScroll(state, p1, p2, p3)
+                local action = scr.onScroll(state, p1, p2, p3)
                 state.dirty = true
+                if action then dispatch(action) end
             end
         elseif ev == "websocket_message" then
             -- websocket handling
             local scr = screens[state.screen]
-            term.write(p1.message)
+            local msg = textutils.unserialiseJSON(p2)
             if scr.eventHandler then
-                scr.eventHandler(state, ev, p1, p3)
+                local action = scr.eventHandler(state, ev, p1, msg)
+                state.dirty = true
+                if action then dispatch(action) end
             end
         elseif ev == "websocket_closed" then
             os.error("WebSocket failed: ".. tostring(p3))
@@ -125,8 +135,8 @@ function M.run(config)
             local scr = screens[state.screen]
             if scr.onKey then
                 local action = scr.onKey(state, ev, p1, ctx)
-                if action then dispatch(action) end
                 state.dirty = true
+                if action then dispatch(action) end
             end
         end
     end

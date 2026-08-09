@@ -1,4 +1,5 @@
 local ui = require("app.ui.ui")
+local encounter_api = require("app.api.encounter")
 local M = {}
 
 function M.load(state, ctx)
@@ -30,7 +31,19 @@ function M.draw(state)
 end
 
 function M.onKey(state, ev, p1, ctx)
-    if ev == "key" and p1 == keys.q then
+    if ev == "key" then
+        if p1 == keys.q then
+            -- return "goto:menu"
+        elseif p1 == keys.s then
+            encounter_api.surrender()
+            return "goto:menu"
+        end
+    end
+end
+
+function M.eventHandler(state, event, event_name, event_message)
+    local ev_type = event_message.type
+    if ev_type == "battle_forfeited" then
         return "goto:menu"
     end
 end

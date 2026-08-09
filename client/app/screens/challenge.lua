@@ -9,6 +9,7 @@ local challengeable
 local challengeable_players = {}
 local received_challenges = {}
 local sent_challenge = nil
+local self_id = nil
 
 local function reloadChallenges()
     received_challenges = {}
@@ -17,8 +18,8 @@ local function reloadChallenges()
     local result, err = encounter_api.challenges()
 
     if not result then
-        print("=== ERROR: ===")
-        print(err or "Unknown error (nil returned)")
+        term.write("=== ERROR: ===")
+        term.write(err or "Unknown error (nil returned)")
         return
     end
 
@@ -28,8 +29,8 @@ local function reloadChallenges()
     if sent_challenge == nil then
         local result_players, err_players = player_api.get_players()
         if not result_players then
-            print("=== ERROR: ===")
-            print(err_players or "Unknown error (nil returned)")
+            term.write("=== ERROR: ===")
+            term.write(err_players or "Unknown error (nil returned)")
             return
         end
 
@@ -41,7 +42,9 @@ local function reloadChallenges()
         end
 
         for _, player in ipairs(result_players) do
-            if player.id ~= nil and not ids[player.id] then
+            if player.id == self_id then
+                -- continue
+            elseif player.id ~= nil and not ids[player.id] then
                 challengeable_players[#challengeable_players + 1] = player
             end
         end
@@ -52,6 +55,7 @@ local function reloadChallenges()
 end
 
 function M.load(state, ctx)
+    self_id = ctx.player_id
     challengers = challengers or panel.newPanelList{
         x = 2, y = 3, width = 24, row_height = 2, visible_rows = 3,
         drawRow = function(ch, x, y, w)
@@ -96,6 +100,7 @@ function M.draw(state)
 end
 
 local function respond(state, challenge, response)
+    -- May want to have the server cancel requested challenges if you accept one (server side)
     encounter_api.respond_challenge(challenge.challenge_id, response == "accept")
     if response == "accept" then
         return "goto:battle"
@@ -120,8 +125,16 @@ function M.handle(state, action, ctx)
 end
 
 function M.eventHandler(state, event, event_name, event_message)
-    print(event_message)
-    os.sleep(2)
+    local ev_type = event_message.type
+    if ev_type == "challenge_canceled"
+        or ev_type == "challenge_received" then
+        reloadChallenges()
+    elseif ev_type == "challenge_response" then
+        if event_message.accepted then
+            return "goto:battle"
+        end
+        reloadChallenges()
+    end
 end
 
 function M.onScroll(state, dir, x, y, ctx)

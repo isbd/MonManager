@@ -1,4 +1,4 @@
-local core = require("app/api/core")
+local core = require("app.api.core")
 
 local M = {}
 

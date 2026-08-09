@@ -197,16 +197,16 @@ async def cancel_challenge(
             status_code=400, detail="Cannot cancel challenge for active encounter"
         )
 
-    is_notified = await notifier.poke(
-        encounter.challenged_id, EventType.CHALLENGE_CANCELED, challenge_id=encounter.id
-    )
-
     # Deleting encounter but may require state later
     encounter.active = EncounterState.EXPIRED
     await player_crud.set_player_id_active_encounter_id(
         db, encounter.challenger_id, None
     )
     await encounter_crud.delete(db, encounter)
+
+    is_notified = await notifier.poke(
+        encounter.challenged_id, EventType.CHALLENGE_CANCELED, challenge_id=encounter.id
+    )
 
     if not is_notified:
         return ChallengeCancelResponse(
