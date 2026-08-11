@@ -267,6 +267,12 @@ async def challenge_response(
             )
         return ChallengeResponse(success=True, message="Challenge accepted.")
     else:
+        # Deleting encounter but may require state later
+        encounter.active = EncounterState.DECLINED
+        await player_crud.set_player_id_active_encounter_id(
+            db, encounter.challenger_id, None
+        )
+        await encounter_crud.delete(db, encounter)
         is_notified = await notifier.poke(
             encounter.challenger_id,
             EventType.CHALLENGE_RESPONSE,
@@ -278,12 +284,6 @@ async def challenge_response(
                 success=True,
                 message="Challenge rejected but failed to notify opponent.",
             )
-        # Deleting encounter but may require state later
-        encounter.active = EncounterState.DECLINED
-        await player_crud.set_player_id_active_encounter_id(
-            db, encounter.challenger_id, None
-        )
-        await encounter_crud.delete(db, encounter)
         return ChallengeResponse(success=True, message="Challenge rejected.")
 
 
