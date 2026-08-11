@@ -5,7 +5,8 @@ from crud import rift_crud
 from database import get_db
 from dependencies import get_current_player
 from models.rift import RiftInstance
-from schemas.rift import RiftResponse
+from schemas.rift import RiftResponse, RiftCreateResponse, RiftCreate
+from services import rift_service
 
 router = APIRouter()
 
@@ -18,27 +19,24 @@ async def get_rifts(
     return await rift_crud.get_all(db)
 
 
-# @router.post("/", response_model=PlayerCreateResponse)
-# async def create_player(body: PlayerCreate, db: AsyncSession = Depends(get_db)):
-#     """Create player that doesn't already exist."""
-#     existing = await player_crud.get_by_name(db, body.name)
+@router.get("/{rift_id}", response_model=RiftResponse)
+async def get_rift(
+    rift_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: RiftInstance = Depends(get_current_player),
+):
+    """Get a specific rift by id."""
+    rift = await rift_crud.get_by_id(db, rift_id)
 
-#     if existing:
-#         raise HTTPException(status_code=400, detail="Player already exists")
+    if not rift:
+        raise HTTPException(status_code=404, detail="Rift not found")
 
-#     return await player_service.create_player(db, body.name)
+    return rift
 
 
-# @router.get("/{player_id}", response_model=PlayerResponse)
-# async def get_player(
-#     player_id: int,
-#     db: AsyncSession = Depends(get_db),
-#     _: PlayerInstance = Depends(get_current_player),
-# ):
-#     """Get a specific player by id."""
-#     player = await player_crud.get_by_id(db, player_id)
+# Create rift (admin locked)
+@router.post("/", response_model=RiftCreateResponse)
+async def create_rift(body: RiftCreate, db: AsyncSession = Depends(get_db)):
+    """Create rift at specified coordinates."""
+    return await rift_service.create_rift(db, body.x_coord, body.z_coord)
 
-#     if not player:
-#         raise HTTPException(status_code=404, detail="Player not found")
-
-#     return player

@@ -1,7 +1,7 @@
 
 import enum
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Enum
+from sqlalchemy import Column, Integer, Enum, BigInteger
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -23,7 +23,7 @@ class RiftInstance(Base):
     z_coord = Column(Integer, nullable=False)
     radius = Column(Integer, nullable=False)
     state = Column(Enum(RiftState), nullable=False)
-    opened_at = Column(Integer, nullable=False) # EPOCH
-    expires_at = Column(Integer, nullable=False) # EPOCH
+    opened_at = Column(BigInteger, nullable=False) # EPOCH
+    expires_at = Column(BigInteger, nullable=False) # EPOCH
     rift_type = Column(Enum(RiftType), nullable=False)
     # Spawn reason mechanic? Allows for specific player lure, event

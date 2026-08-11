@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
+    # Will likely need to add a timer handler for rift management
+
 
 app = FastAPI(lifespan=lifespan)
 
