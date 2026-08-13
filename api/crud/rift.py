@@ -8,9 +8,7 @@ from models.rift import RiftInstance
 
 async def get_by_id(db: AsyncSession, rift_id: int) -> Optional[RiftInstance]:
     """Get rift instance by id."""
-    result = await db.execute(
-        select(RiftInstance).where(RiftInstance.id == rift_id)
-    )
+    result = await db.execute(select(RiftInstance).where(RiftInstance.id == rift_id))
     return result.scalar_one_or_none()
 
 

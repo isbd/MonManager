@@ -7,16 +7,15 @@ import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
 from models.base import Base
-from routes import battle, encounter, monster, player, websocket, rift
+from routes import battle, encounter, monster, player, rift, websocket
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # May need job handling
     yield
-
-    # Will likely need to add a timer handler for rift management
 
 
 app = FastAPI(lifespan=lifespan)

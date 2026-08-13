@@ -12,6 +12,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://monuser:monpass@db:5432/mondb
+      - DEV_AUTO_LOGIN=${DEV_AUTO_LOGIN:-0}
     depends_on:
       db:
         condition: service_healthy
