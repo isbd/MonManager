@@ -26,4 +26,5 @@ class RiftInstance(Base):
     opened_at = Column(BigInteger, nullable=False)  # EPOCH
     expires_at = Column(BigInteger, nullable=False)  # EPOCH
     rift_type = Column(Enum(RiftType), nullable=False)
+    charges = Column(Integer, nullable=False)
     # Spawn reason mechanic? Allows for specific player lure, event

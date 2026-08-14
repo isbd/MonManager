@@ -20,6 +20,28 @@ async def create(db: AsyncSession, rift: RiftInstance) -> RiftInstance:
     return rift
 
 
+async def stage_delete(db: AsyncSession, rift: RiftInstance) -> bool:
+    """Stage deleting a rift."""
+    if rift is None:
+        return False
+    await db.delete(rift)
+    return True
+
+
+async def delete_instance(db: AsyncSession, rift: RiftInstance) -> bool:
+    """Delete a rift."""
+    if await stage_delete(db, rift) is False:
+        return False
+    await db.commit()
+    return True
+
+
+async def delete_by_id(db: AsyncSession, rift_id: int) -> bool:
+    """Delete a rift by id."""
+    rift = await get_by_id(db, rift_id)
+    return await delete_instance(db, rift)
+
+
 async def get_all(db: AsyncSession) -> list[RiftInstance]:
     """Fetch all rifts."""
     result = await db.execute(select(RiftInstance))

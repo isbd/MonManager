@@ -5,7 +5,13 @@ from crud import rift_crud
 from database import get_db
 from dependencies import get_current_player
 from models.rift import RiftInstance
-from schemas.rift import RiftCreate, RiftCreateResponse, RiftResponse
+from schemas.rift import (
+    CalibrateResponse,
+    RiftCreate,
+    RiftCreateResponse,
+    RiftFishResponse,
+    RiftResponse,
+)
 from services import rift_service
 
 router = APIRouter()
@@ -15,22 +21,33 @@ router = APIRouter()
 async def get_rifts(
     db: AsyncSession = Depends(get_db), _: RiftInstance = Depends(get_current_player)
 ):
-    """Get all players."""
-    return await rift_crud.get_all(db)
+    """Get all rifts."""
+    return await rift_service.get_all_rifts(db)
 
 
-@router.get("/closest", response_model=RiftResponse)
-async def get_closest_rift(
-    x: int = Query(..., description="World X coordinate"),
-    z: int = Query(..., description="World Z coordinate"),
+@router.get("/fish_rifts", response_model=RiftFishResponse)
+async def fish_rifts(
+    x: int = Query(..., description="Overworld X coordinate"),
+    z: int = Query(..., description="Overworld Z coordinate"),
     db: AsyncSession = Depends(get_db),
-    _: RiftInstance = Depends(get_current_player),
+    player: RiftInstance = Depends(get_current_player),
 ):
-    """Get closest rift."""
-    return await rift_service.fetch_nearest_rift(db, x, z)
+    """Search for the closest rift."""
+    return await rift_service.fish_rifts(db, player, x, z)
 
 
-# Create rift (admin locked)
+@router.get("/calibrate", response_model=CalibrateResponse)
+async def calibrate(
+    x: int = Query(..., description="Overworld X coordinate"),
+    z: int = Query(..., description="Overworld Z coordinate"),
+    db: AsyncSession = Depends(get_db),
+    player: RiftInstance = Depends(get_current_player),
+):
+    """Calibrate in active rift."""
+    return await rift_service.calibrate(db, player, x, z)
+
+
+# Create rift (TODO admin locked)
 @router.post("/", response_model=RiftCreateResponse)
 async def create_rift(body: RiftCreate, db: AsyncSession = Depends(get_db)):
     """Create rift at specified coordinates."""

@@ -8,8 +8,23 @@ class RiftCreate(BaseModel):
     z_coord: int
 
 
+class CalibrateResponse(BaseModel):
+    """Rift calibration response."""
+
+    success: bool
+    message: str
+
+
+class RiftFishResponse(BaseModel):
+    """Rift fishing response."""
+
+    success: bool
+    distance: int
+    error_message: str
+
+
 class RiftCreateResponse(BaseModel):
-    """Rift creation success"""
+    """Rift creation success."""
 
     id: int
     x_coord: int
