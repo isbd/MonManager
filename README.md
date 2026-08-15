@@ -110,10 +110,15 @@ encounter.py
 - [X] `GET      /encounter/challenges           -- [AUTH] get current player's current sent and received challenges`
 
 battle.py
-- [ ] `POST     /battle/attack                  -- [AUTH] attempt an attack`
+- [X] `POST     /battle/attack                  -- [AUTH] attempt an attack`
 - [ ] `POST     /battle/swap                    -- [AUTH] attempt to swap monsters`
 - [ ] `POST     /battle/catch                   -- [AUTH] attempt to catch wild monster`
 - [X] `GET      /battle/moves                   -- [AUTH] get your active monsters moves`
+- [X] `GET      /battle/                        -- [AUTH] get the status of current battle`
+
+rift.py
+- [ ] `GET      /rift/locate                    -- [AUTH] locate the nearest open rift`
+- [ ] `GET      /rift/                          -- [AUTH] get the status of current battle`
 - [ ] `GET      /battle/                        -- [AUTH] get the status of current battle`
 
 

@@ -1,11 +1,17 @@
 
-.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client client-lint
+.PHONY: help build up down refresh lint lint-check db-command logs nuke seed client client-lint debug
+
+DEV_AUTO_LOGIN ?= 0
+export DEV_AUTO_LOGIN
 
 build-clean: ## Build the containers fresh
 	docker compose build --no-cache
 
 build: ## Build the containers
 	docker compose build
+
+debug: ## Bring containers up with dev auto-login enabled
+	$(MAKE) up DEV_AUTO_LOGIN=1
 
 db-command: ## Enter postgres container for SQL commands
 	docker exec -it monserver_db psql -U monuser -d mondb
@@ -43,6 +49,9 @@ refresh-clean: ## Build the containers fresh then restart them
 refresh: ## Build the containers then restart them
 	$(MAKE) build
 	$(MAKE) up
+
+refresh-debug: ## Rebuild and start with dev auto-login
+	$(MAKE) refresh DEV_AUTO_LOGIN=1
 
 seed: ## Seed the data into the database
 	$(MAKE) -C seed seed

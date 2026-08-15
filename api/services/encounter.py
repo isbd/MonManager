@@ -1,4 +1,3 @@
-import random
 from typing import Optional
 
 from fastapi import HTTPException
@@ -113,9 +112,9 @@ async def attempt_wild_encounter(
     db: AsyncSession, player: PlayerInstance
 ) -> WildEncounterResponse:
     """Attempt to start a wild encounter."""
-    a = random.randint(0, 10)
-    if a > 5:
-        return WildEncounterResponse(success=False, message="No monster appeared...")
+    # a = random.randint(0, 10)
+    # if a > 5:
+    #     return WildEncounterResponse(success=False, message="No monster appeared...")
 
     monster_species = await monster_service.roll_species(db)
 
