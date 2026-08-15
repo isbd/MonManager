@@ -1,6 +1,6 @@
 # MonManager
 
-A Pokemon-like monster server built for ComputerCraft, powered by FastAPI, PostgreSQL — fully Dockerized.
+A Pokemon-like monster server built for ComputerCraft, utilizing FastAPI, PostgreSQL.
 
 ---
 
