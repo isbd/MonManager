@@ -32,7 +32,7 @@ async def fish_rifts(
     db: AsyncSession = Depends(get_db),
     player: RiftInstance = Depends(get_current_player),
 ):
-    """Search for the closest rift."""
+    """Grab distance from nearest rift."""
     return await rift_service.fish_rifts(db, player, x, z)
 
 
