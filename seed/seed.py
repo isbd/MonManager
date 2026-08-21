@@ -29,6 +29,8 @@ def seed_species(engine):
                     ).fetchone()
                     move_ids.append(move.id)
                 row["starter_moves"] = move_ids
+            if "texture" in entry:
+                row["texture"] = read_texture(f"data/textures/{entry['texture']}")
 
             conn.execute(insert(species_table), [row])
         conn.commit()
@@ -54,6 +56,14 @@ def seed_moves(engine):
 
             conn.execute(insert(moves_table), [row])
         conn.commit()
+
+
+def read_texture(texture_location: str):
+    try:
+        with open(texture_location) as texture_file:
+            return texture_file.read().rstrip("\n")
+    except OSError:
+        return ""
 
 
 def read_json(file_location: str):

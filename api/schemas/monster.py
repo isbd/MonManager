@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class MonsterSpeciesInfo(BaseModel):
     name: str
+    texture: str
 
     class Config:
         from_attributes = True
