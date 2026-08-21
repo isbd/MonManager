@@ -14,6 +14,14 @@ def get_current_spawn_time() -> str:
     return "day" if hour % 2 else "night"
 
 
+def reverse_monster_image(image_text: str) -> str:
+    """Reverse text image."""
+    new_image_text = ""
+    for line in image_text.split("\n"):
+        new_image_text += f"{line[::-1]}\n"
+    return new_image_text[:-1]
+
+
 async def roll_species(db: AsyncSession, by_time: bool = True) -> MonsterSpecies:
     """Roll for wild species."""
     if by_time:

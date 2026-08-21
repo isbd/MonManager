@@ -20,6 +20,7 @@ from schemas.encounter import (
     ChallengeList,
     ChallengeResponse,
     EncounterDetails,
+    EncounterMonsterDetails,
     SurrenderResponse,
     WildEncounterResponse,
 )
@@ -78,7 +79,51 @@ async def surrender(db: AsyncSession, player: PlayerInstance) -> SurrenderRespon
 async def get_current_encounter_details(
     db: AsyncSession, player: PlayerInstance
 ) -> EncounterDetails:
-    return await fetch_player_encounter(db, player)
+    encounter = await fetch_player_encounter(db, player)
+    challenger_mon = await monster_crud.get_full_by_instance_id(
+        db, encounter.challenger_mon_id
+    )
+    challenged_mon = await monster_crud.get_full_by_instance_id(
+        db, encounter.challenged_mon_id
+    )
+
+    challenger_mon_details = EncounterMonsterDetails(
+        id=encounter.challenger_mon_id,
+        current_health=challenger_mon.current_hp,
+        max_health=challenger_mon.max_hp,
+        texture=challenger_mon.species.texture,
+    )
+    challenged_mon_details = EncounterMonsterDetails(
+        id=encounter.challenged_mon_id,
+        current_health=challenged_mon.current_hp,
+        max_health=challenged_mon.max_hp,
+        texture=challenged_mon.species.texture,
+    )
+
+    if encounter.challenger_id == player.id:
+        challenged_mon_details.texture = monster_service.reverse_monster_image(
+            challenged_mon_details.texture
+        )
+        return EncounterDetails(
+            id=encounter.id,
+            encounter_type=encounter.encounter_type,
+            self_id=encounter.challenger_id,
+            self_mon=challenger_mon_details,
+            opponent_id=encounter.challenged_id,
+            opponent_mon=challenged_mon_details,
+        )
+    else:
+        challenger_mon_details.texture = monster_service.reverse_monster_image(
+            challenger_mon_details.texture
+        )
+        return EncounterDetails(
+            id=encounter.id,
+            encounter_type=encounter.encounter_type,
+            self_id=encounter.challenged_id,
+            self_mon=challenged_mon_details,
+            opponent_id=encounter.challenger_id,
+            opponent_mon=challenger_mon_details,
+        )
 
 
 async def notify_opponent(

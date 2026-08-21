@@ -76,15 +76,24 @@ class ChallengeCancel(BaseModel):
     challenge_id: int
 
 
+class EncounterMonsterDetails(BaseModel):
+    """Details about a specific monster in an encounter."""
+
+    id: int
+    current_health: int
+    max_health: int
+    texture: str
+
+
 class EncounterDetails(BaseModel):
     """Details about an encounter."""
 
     id: int
     encounter_type: str
-    challenger_id: int
-    challenger_mon_id: int
-    challenged_id: Optional[int]
-    challenged_mon_id: Optional[int]
+    self_id: int
+    self_mon: EncounterMonsterDetails
+    opponent_id: Optional[int]
+    opponent_mon: EncounterMonsterDetails
 
     class Config:
         from_attributes = True
