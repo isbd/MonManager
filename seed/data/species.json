@@ -4,20 +4,23 @@
         "description": "Hardshelled fella",
         "spawn_time": "day",
         "weight": 10,
-        "moves": ["Headbutt", "Bite"]
+        "moves": ["Headbutt", "Bite"],
+        "texture": "turtle_duck.nfp"
     },
     {
-        "name": "Lizard",
-        "description": "Sneaky fella",
+        "name": "Wickle",
+        "description": "Fire fella",
         "spawn_time": "day",
         "weight": 2,
-        "moves": ["Headbutt", "Bite"]
+        "moves": ["Headbutt", "Bite"],
+        "texture": "wickle.nfp"
     },
     {
         "name": "Goblin",
         "description": "Just a little fella",
         "spawn_time": "night",
         "weight": 100,
-        "moves": ["Headbutt", "Bite"]
+        "moves": ["Headbutt", "Bite"],
+        "texture": "goblin.nfp"
     }
 ]

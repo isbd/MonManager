@@ -17,6 +17,7 @@ class MonsterSpecies(Base):
         nullable=False,
     )
     starter_moves = Column(JSON, nullable=False, server_default="[]")
+    texture = Column(String)
 
     def __repr__(self):
         return f"({self.id}) {self.name} {self.description}"
