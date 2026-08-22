@@ -16,7 +16,14 @@ from models.encounter import (
 from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
-from schemas.battle import AttackDetails, BattleResponse, CatchResponse
+from schemas.battle import (
+    AttackDetails,
+    BattleResponse,
+    CatchResponse,
+    StatusEffect,
+    TurnAttackDetails,
+    TurnDetails,
+)
 from schemas.event import EventType
 from schemas.move import MonsterMoveResponse
 
@@ -151,18 +158,25 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     challenged_move = await move_crud.get_by_id(db, turn.challenged_move_id)
     challenger_move = await move_crud.get_by_id(db, turn.challenger_move_id)
 
+    # Required for snapshot of battle
+    turn.challenged_pre_damage_health = challenger_mon.current_hp
+    turn.challenger_pre_damage_health = challenger_mon.current_hp
+    turn.challenger_max_hp = challenger_mon.max_hp
+    turn.challenged_max_hp = challenged_mon.max_hp
+
     # TODO: Determine speed
 
     challenged_attack = await resolve_attack(
         db, challenged_mon, challenger_mon, challenged_move
     )
+    turn.challenged_move_missed = challenged_attack.missed
     if challenged_attack.missed:
-        turn.challenged_move_missed = challenged_attack.missed
+        turn.challenged_damage_dealt = 0
     else:
         turn.challenged_damage_dealt = challenged_attack.damage_dealt
 
     # Check if the mon is dead
-    if challenger_mon.current_hp <= 1:
+    if challenger_mon.current_hp < 1:
         await resolve_battle(db, turn)
         return BattleResponse(
             success=True,
@@ -175,12 +189,13 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     challenger_attack = await resolve_attack(
         db, challenger_mon, challenged_mon, challenger_move
     )
+    turn.challenger_move_missed = challenger_attack.missed
     if challenger_attack.missed:
-        turn.challenger_move_missed = challenger_attack.missed
+        turn.challenger_damage_dealt = 0
     else:
         turn.challenger_damage_dealt = challenger_attack.damage_dealt
 
-    if challenged_mon.current_hp <= 1:
+    if challenged_mon.current_hp < 1:
         await resolve_battle(db, turn)
         return BattleResponse(
             success=True,
@@ -332,3 +347,67 @@ async def get_active_moves(
         raise HTTPException(
             status_code=500, detail="Missing encounter reference in active moves"
         )
+
+
+async def get_latest_turn(db: AsyncSession, player: PlayerInstance) -> TurnDetails:
+    """Fetch latest turn details."""
+    encounter = await encounter_service.fetch_player_encounter(db, player)
+    battle = await battle_crud.get_latest_resolved_turn(db, encounter.id)
+    if not battle:
+        raise HTTPException(status_code=404, detail="Requested turn does not exist")
+
+    return await format_battle_turn(db, player, encounter, battle)
+
+
+async def get_resolved_turn(
+    db: AsyncSession, player: PlayerInstance, turn_number: int
+) -> TurnDetails:
+    """Fetch specific turn details."""
+    encounter = await encounter_service.fetch_player_encounter(db, player)
+    battle = await battle_crud.get_turn_by_number(db, encounter.id, turn_number)
+    if not battle:
+        raise HTTPException(status_code=404, detail="Requested turn does not exist")
+    if battle.resolved is False:
+        raise HTTPException(status_code=400, detail="Requested turn is not resolved")
+    return await format_battle_turn(db, player, encounter, battle)
+
+
+async def format_battle_turn(
+    db: AsyncSession, player: PlayerInstance, encounter: Encounter, battle: BattleTurn
+) -> TurnDetails:
+    """Format turn details result."""
+    challenger_move = await move_crud.get_by_id(db, battle.challenger_move_id)
+    challenged_move = await move_crud.get_by_id(db, battle.challenged_move_id)
+    challenger_attack = TurnAttackDetails(
+        move_name=challenger_move.name,
+        missed=battle.challenger_move_missed,
+        damage_dealt=battle.challenger_damage_dealt,
+        target_max_health=battle.challenged_max_hp,
+        target_pre_damage_health=battle.challenged_pre_damage_health,
+    )
+    challenged_attack = TurnAttackDetails(
+        move_name=challenged_move.name,
+        missed=battle.challenged_move_missed,
+        damage_dealt=battle.challenged_damage_dealt,
+        target_max_health=battle.challenger_max_hp,
+        target_pre_damage_health=battle.challenger_pre_damage_health,
+    )
+    if encounter.challenged_id == player.id:
+        # TODO: change speed later, this is hardcoded
+        self_first = True
+        self_mon_attack = challenged_attack
+        opponent_mon_attack = challenger_attack
+    else:
+        self_first = False
+        self_mon_attack = challenger_attack
+        opponent_mon_attack = challenged_attack
+
+    # TODO: add status effects
+    return TurnDetails(
+        turn_number=battle.turn_number,
+        self_mon_attack=self_mon_attack,
+        opponent_mon_attack=opponent_mon_attack,
+        self_mon_status=StatusEffect(),
+        opponent_mon_status=StatusEffect(),
+        self_first=self_first,
+    )
