@@ -126,10 +126,11 @@ async def attempt_attack(
                     challenged_attack=None,
                 )
             else:
+                result = await resolve_turn(db, active_turn)
                 await encounter_service.notify_opponent(
                     encounter, player.id, EventType.ROUND_RESOLVED
                 )
-                return await resolve_turn(db, active_turn)
+                return result
         case _:
             raise HTTPException(
                 status_code=500,
@@ -221,6 +222,12 @@ async def resolve_battle(db: AsyncSession, turn: BattleTurn):
     """Conclude the battle."""
     # TODO: Better handling for battles
     encounter = await encounter_crud.get_by_id(db, turn.encounter_id)
+    await encounter_service.notify_opponent(
+        encounter, encounter.challenged_id, EventType.ENCOUNTER_OVER
+    )
+    await encounter_service.notify_opponent(
+        encounter, encounter.challenger_id, EventType.ENCOUNTER_OVER
+    )
     encounter.active = EncounterState.COMPLETED
     turn.resolved = True
     await battle_crud.update_instance(db, turn)
