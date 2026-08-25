@@ -1,11 +1,99 @@
 [
     {
-        "name": "Turtle",
+        "name": "Corval",
+        "description": "Just a flying fella",
+        "spawn_time": "day",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "corval.nfp"
+    },
+    {
+        "name": "Goblin",
+        "description": "Just a little fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "goblin.nfp"
+    },
+    {
+        "name": "Guy",
+        "description": "Just a fella",
+        "spawn_time": "day",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "guy.nfp"
+    },
+    {
+        "name": "Mandroot",
+        "description": "Just a little tree fella",
+        "spawn_time": "day",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "mandroot.nfp"
+    },
+    {
+        "name": "Nimblin",
+        "description": "Just a little ninja fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "nimblin.nfp"
+    },
+    {
+        "name": "Peeker",
+        "description": "Just a little peeking fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "peeker.nfp"
+    },
+    {
+        "name": "Rat",
+        "description": "Just a little ratty fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "rat.nfp"
+    },
+    {
+        "name": "Sabian",
+        "description": "Just a little fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "sabian.nfp"
+    },
+    {
+        "name": "Seapon",
+        "description": "Just a little water fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "seapon.nfp"
+    },
+    {
+        "name": "Sorrowmon",
+        "description": "Just a little demon fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "sorrowmon.nfp"
+    },
+    {
+        "name": "Toy Mouse",
+        "description": "Just a little playful fella",
+        "spawn_time": "night",
+        "weight": 100,
+        "moves": ["Headbutt", "Bite"],
+        "texture": "toymouse.nfp"
+    },
+    {
+        "name": "Turtle Duck",
         "description": "Hardshelled fella",
         "spawn_time": "day",
         "weight": 10,
         "moves": ["Headbutt", "Bite"],
-        "texture": "turtle_duck.nfp"
+        "texture": "turtleduck.nfp"
     },
     {
         "name": "Wickle",
@@ -16,11 +104,11 @@
         "texture": "wickle.nfp"
     },
     {
-        "name": "Goblin",
-        "description": "Just a little fella",
+        "name": "Wispor",
+        "description": "Just a little fire fella",
         "spawn_time": "night",
         "weight": 100,
         "moves": ["Headbutt", "Bite"],
-        "texture": "goblin.nfp"
+        "texture": "wispor.nfp"
     }
 ]
