@@ -160,7 +160,7 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     challenger_move = await move_crud.get_by_id(db, turn.challenger_move_id)
 
     # Required for snapshot of battle
-    turn.challenged_pre_damage_health = challenger_mon.current_hp
+    turn.challenged_pre_damage_health = challenged_mon.current_hp
     turn.challenger_pre_damage_health = challenger_mon.current_hp
     turn.challenger_max_hp = challenger_mon.max_hp
     turn.challenged_max_hp = challenged_mon.max_hp

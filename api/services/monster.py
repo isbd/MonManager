@@ -2,11 +2,13 @@ import datetime
 import random
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud import monster_crud, move_crud
 from models.monster import MonsterInstance, MonsterSpecies
 from models.move import MoveInstance
+from models.player import PlayerInstance
 
 
 def get_current_spawn_time() -> str:
@@ -71,3 +73,17 @@ async def grab_players_monster(
     if not monsters:
         return None
     return monsters[0]
+
+
+async def party_fight_validation(db: AsyncSession, player: PlayerInstance):
+    """Ensure a player's party is valid for an encounter."""
+    mon_instance = await grab_players_monster(db, player.id)
+    if mon_instance is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"User {player.name} is missing a mon to start this battle",
+        )
+    if mon_instance.current_hp < 1:
+        raise HTTPException(
+            status_code=400, detail="Party is not suitable for encounter."
+        )
