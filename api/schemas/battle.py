@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -25,9 +25,11 @@ class StatusEffect(BaseModel):
     health_gained: int = 0
 
 
-class TurnAttackDetails(BaseModel):
-    """Details about a monsters attack in a turn."""
+class TurnAction(BaseModel):
+    """Details about a turn action."""
 
+    actor: Literal["self", "opponent"]
+    message: str
     move_name: str
     missed: bool
     damage_dealt: int
@@ -35,15 +37,13 @@ class TurnAttackDetails(BaseModel):
     target_pre_damage_health: int
 
 
-class TurnDetails(BaseModel):
-    """Battle turn information."""
+class RoundDetails(BaseModel):
+    """Battle round information."""
 
     turn_number: int
-    self_mon_attack: TurnAttackDetails
-    opponent_mon_attack: TurnAttackDetails
+    actions: list[TurnAction]
     self_mon_status: StatusEffect
     opponent_mon_status: StatusEffect
-    self_first: bool
 
 
 class AttackDetails(BaseModel):

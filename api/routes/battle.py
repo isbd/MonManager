@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
-from schemas.battle import AttackRequest, BattleResponse, CatchResponse, TurnDetails
+from schemas.battle import AttackRequest, BattleResponse, CatchResponse, RoundDetails
 from schemas.move import MonsterMoveResponse
 from services import battle_service
 
@@ -39,7 +39,7 @@ async def get_active_moves(
     return await battle_service.get_active_moves(db, player)
 
 
-@router.get("/turn", response_model=TurnDetails)
+@router.get("/turn", response_model=RoundDetails)
 async def get_latest_resolved_turn(
     db: AsyncSession = Depends(get_db),
     player: PlayerInstance = Depends(get_current_player),
@@ -48,7 +48,7 @@ async def get_latest_resolved_turn(
     return await battle_service.get_latest_turn(db, player)
 
 
-@router.get("/{turn_number}", response_model=TurnDetails)
+@router.get("/{turn_number}", response_model=RoundDetails)
 async def get_resolved_turn(
     turn_number: int,
     db: AsyncSession = Depends(get_db),

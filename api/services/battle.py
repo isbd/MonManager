@@ -20,9 +20,9 @@ from schemas.battle import (
     AttackDetails,
     BattleResponse,
     CatchResponse,
+    RoundDetails,
     StatusEffect,
-    TurnAttackDetails,
-    TurnDetails,
+    TurnAction,
 )
 from schemas.event import EventType
 from schemas.move import MonsterMoveResponse
@@ -356,7 +356,7 @@ async def get_active_moves(
         )
 
 
-async def get_latest_turn(db: AsyncSession, player: PlayerInstance) -> TurnDetails:
+async def get_latest_turn(db: AsyncSession, player: PlayerInstance) -> RoundDetails:
     """Fetch latest turn details."""
     encounter = await encounter_service.fetch_player_encounter(db, player)
     battle = await battle_crud.get_latest_resolved_turn(db, encounter.id)
@@ -368,7 +368,7 @@ async def get_latest_turn(db: AsyncSession, player: PlayerInstance) -> TurnDetai
 
 async def get_resolved_turn(
     db: AsyncSession, player: PlayerInstance, turn_number: int
-) -> TurnDetails:
+) -> RoundDetails:
     """Fetch specific turn details."""
     encounter = await encounter_service.fetch_player_encounter(db, player)
     battle = await battle_crud.get_turn_by_number(db, encounter.id, turn_number)
@@ -381,40 +381,49 @@ async def get_resolved_turn(
 
 async def format_battle_turn(
     db: AsyncSession, player: PlayerInstance, encounter: Encounter, battle: BattleTurn
-) -> TurnDetails:
+) -> RoundDetails:
     """Format turn details result."""
     challenger_move = await move_crud.get_by_id(db, battle.challenger_move_id)
     challenged_move = await move_crud.get_by_id(db, battle.challenged_move_id)
-    challenger_attack = TurnAttackDetails(
+    challenger_attack = TurnAction(
+        actor="self" if encounter.challenger_id == player.id else "opponent",
+        message=format_action_message(
+            encounter.challenger_id == player.id,
+            challenger_move.name,
+            battle.challenger_move_missed,
+        ),
         move_name=challenger_move.name,
         missed=battle.challenger_move_missed,
         damage_dealt=battle.challenger_damage_dealt,
         target_max_health=battle.challenged_max_hp,
         target_pre_damage_health=battle.challenged_pre_damage_health,
     )
-    challenged_attack = TurnAttackDetails(
+    challenged_attack = TurnAction(
+        actor="self" if encounter.challenged_id == player.id else "opponent",
+        message=format_action_message(
+            encounter.challenged_id == player.id,
+            challenged_move.name,
+            battle.challenged_move_missed,
+        ),
         move_name=challenged_move.name,
         missed=battle.challenged_move_missed,
         damage_dealt=battle.challenged_damage_dealt,
         target_max_health=battle.challenger_max_hp,
         target_pre_damage_health=battle.challenger_pre_damage_health,
     )
-    if encounter.challenged_id == player.id:
-        # TODO: change speed later, this is hardcoded
-        self_first = True
-        self_mon_attack = challenged_attack
-        opponent_mon_attack = challenger_attack
-    else:
-        self_first = False
-        self_mon_attack = challenger_attack
-        opponent_mon_attack = challenged_attack
 
+    # TODO: add turn ordering
     # TODO: add status effects
-    return TurnDetails(
+    return RoundDetails(
         turn_number=battle.turn_number,
-        self_mon_attack=self_mon_attack,
-        opponent_mon_attack=opponent_mon_attack,
+        actions=[challenger_attack, challenged_attack],
         self_mon_status=StatusEffect(),
         opponent_mon_status=StatusEffect(),
-        self_first=self_first,
     )
+
+
+def format_action_message(is_self, move_name, missed) -> str:
+    """Format action display."""
+    perspective = "You" if is_self else "Opp"
+    missed = ". Missed!" if missed else ""
+    return f"{perspective} used {move_name}{missed}"
