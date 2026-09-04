@@ -10,6 +10,7 @@ class BattleTurn(Base):
     id = Column(Integer, primary_key=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=False)
     turn_number = Column(Integer, nullable=False)
+    resolved = Column(Boolean, nullable=False, default=False)
 
     challenger_mon_id = Column(
         Integer, ForeignKey("monster_instances.id"), nullable=True
@@ -21,13 +22,19 @@ class BattleTurn(Base):
     challenger_move_id = Column(Integer, ForeignKey("moves.id"), nullable=True)
     challenged_move_id = Column(Integer, ForeignKey("moves.id"), nullable=True)
 
-    # TODO: Re-evaluate separating these into separate table
+    challenger_max_hp = Column(Integer, nullable=True)
+    challenged_max_hp = Column(Integer, nullable=True)
+
+    challenger_pre_damage_health = Column(Integer, nullable=True)
+    challenged_pre_damage_health = Column(Integer, nullable=True)
+
     challenger_damage_dealt = Column(Integer, nullable=True)
     challenged_damage_dealt = Column(Integer, nullable=True)
     challenger_move_missed = Column(Boolean, nullable=True)
     challenged_move_missed = Column(Boolean, nullable=True)
 
-    resolved = Column(Boolean, nullable=False, default=False)
+    challenger_speed = Column(Integer, nullable=False)
+    challenged_speed = Column(Integer, nullable=False)
 
     challenger_move = relationship("Move", foreign_keys=[challenger_move_id])
     challenged_move = relationship("Move", foreign_keys=[challenged_move_id])

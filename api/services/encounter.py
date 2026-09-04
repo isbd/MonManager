@@ -161,6 +161,8 @@ async def attempt_wild_encounter(
     # if a > 5:
     #     return WildEncounterResponse(success=False, message="No monster appeared...")
 
+    await monster_service.party_fight_validation(db, player)
+
     monster_species = await monster_service.roll_species(db)
 
     # Fetch players first monster TODO: placeholder right now, should replace with party system
@@ -186,7 +188,7 @@ async def attempt_wild_encounter(
     )
 
 
-async def current_challenges(db, player: PlayerInstance) -> ChallengeList:
+async def current_challenges(db: AsyncSession, player: PlayerInstance) -> ChallengeList:
     """Fetch current challenges relating to player."""
     received = await encounter_crud.get_pending_by_challenged(db, player.id)
     received_challenges = []
@@ -221,7 +223,7 @@ async def current_challenges(db, player: PlayerInstance) -> ChallengeList:
 
 
 async def cancel_challenge(
-    db, player: PlayerInstance, challenge_id: int
+    db: AsyncSession, player: PlayerInstance, challenge_id: int
 ) -> ChallengeCancelResponse:
     """Attempt to cancel a pvp challenge."""
     encounter = await encounter_crud.get_by_id(db, challenge_id)
@@ -261,7 +263,7 @@ async def cancel_challenge(
 
 
 async def challenge_response(
-    db, player: PlayerInstance, challenge_id: int, accept: bool
+    db: AsyncSession, player: PlayerInstance, challenge_id: int, accept: bool
 ) -> ChallengeResponse:
     """Attempt to accept or reject a challenge."""
     encounter = await encounter_crud.get_by_id(db, challenge_id)
@@ -280,17 +282,16 @@ async def challenge_response(
         )
 
     if accept:
+        challenger_instance = await player_crud.get_by_id(db, encounter.challenger_id)
+        await monster_service.party_fight_validation(db, challenger_instance)
+        await monster_service.party_fight_validation(db, player)
+
         challenger_mon = await monster_service.grab_players_monster(
             db, encounter.challenger_id
         )
         challenged_mon = await monster_service.grab_players_monster(
             db, encounter.challenged_id
         )
-
-        if None in (challenger_mon, challenged_mon):
-            raise HTTPException(
-                status_code=400, detail="A user is missing a mon to start this battle"
-            )
 
         encounter.active = EncounterState.ACTIVE
         encounter.challenged_id = player.id
@@ -332,13 +333,15 @@ async def challenge_response(
 
 
 async def attempt_challenge(
-    db, player: PlayerInstance, target_id: int
+    db: AsyncSession, player: PlayerInstance, target_id: int
 ) -> ChallengeEncounterResponse:
     """Attempt to start a pvp encounter."""
     if player.active_encounter_id is not None:
         raise HTTPException(
             status_code=400, detail="Cannot initiate a challenge with an encounter"
         )
+
+    await monster_service.party_fight_validation(db, player)
 
     target_player = await player_crud.get_by_id(db, target_id)
     if not target_player:

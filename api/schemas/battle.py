@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -17,25 +17,39 @@ class AttackRequest(BaseModel):
     attack_id: int
 
 
-class AttackDetails(BaseModel):
-    first: bool
+class StatusEffect(BaseModel):
+    """Details about a monsters status effect in a turn."""
+
+    effect_message: str = ""
+    damage_taken: int = 0
+    health_gained: int = 0
+
+
+class TurnAction(BaseModel):
+    """Details about a turn action."""
+
+    actor: Literal["self", "opponent"]
+    actor_perspective: Literal["challenger", "challenged"]
+    message: str
+    move_name: str
     missed: bool
     damage_dealt: int
-    move_name: str
-    targets_current_health: int
-    targets_total_health: int
-    targets_pre_reduced_health: int
+    target_max_health: int
+    target_pre_damage_health: int
 
 
-# TODO: Modify this, only for testing purposes right now
+class RoundDetails(BaseModel):
+    """Battle round information."""
+
+    turn_number: int
+    actions: list[TurnAction]
+    self_mon_status: Optional[StatusEffect]
+    opponent_mon_status: Optional[StatusEffect]
+
+
 class BattleResponse(BaseModel):
     """Response for attack."""
 
-    success: bool
     active: bool
     pending: bool
-    challenger_attack: Optional[AttackDetails]
-    challenged_attack: Optional[AttackDetails]
-
-
-# TODO: Change these to sub classes
+    round_details: Optional[RoundDetails]

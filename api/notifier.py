@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.encoders import jsonable_encoder
 
 from schemas.event import EventType
 
@@ -30,7 +31,7 @@ class Notifier:
         if ws is None:
             return False
         try:
-            await ws.send_json({"type": event_type, **fields})
+            await ws.send_json(jsonable_encoder({"type": event_type, **fields}))
             return True
         except (RuntimeError, WebSocketDisconnect):
             self.disconnect(player_id, ws)

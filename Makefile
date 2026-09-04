@@ -92,5 +92,8 @@ client: ## Start a client (CLIENT=2, POCKET=1, or WIDTH=n HEIGHT=n)
 pocket: ## Shortcut for a pocket-sized client
 	@$(MAKE) client POCKET=1
 
+pockets: ## Shortcut for two pocket-sized clients for multiplayer testing
+	@$(MAKE) pocket CLIENT=1 </dev/tty & $(MAKE) pocket CLIENT=2 </dev/tty & wait
+
 kill-clients: ## Kills all craftos client containers
 	docker kill $$(docker ps -q --filter "name=monmanager-craftos-*")
