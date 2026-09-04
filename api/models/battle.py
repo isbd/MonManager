@@ -33,5 +33,8 @@ class BattleTurn(Base):
     challenger_move_missed = Column(Boolean, nullable=True)
     challenged_move_missed = Column(Boolean, nullable=True)
 
+    challenger_speed = Column(Integer, nullable=False)
+    challenged_speed = Column(Integer, nullable=False)
+
     challenger_move = relationship("Move", foreign_keys=[challenger_move_id])
     challenged_move = relationship("Move", foreign_keys=[challenged_move_id])

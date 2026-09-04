@@ -29,6 +29,7 @@ class TurnAction(BaseModel):
     """Details about a turn action."""
 
     actor: Literal["self", "opponent"]
+    actor_perspective: Literal["challenger", "challenged"]
     message: str
     move_name: str
     missed: bool
@@ -42,31 +43,13 @@ class RoundDetails(BaseModel):
 
     turn_number: int
     actions: list[TurnAction]
-    self_mon_status: StatusEffect
-    opponent_mon_status: StatusEffect
+    self_mon_status: Optional[StatusEffect]
+    opponent_mon_status: Optional[StatusEffect]
 
 
-class AttackDetails(BaseModel):
-    """Details about attack attempt."""
-
-    first: bool
-    missed: bool
-    damage_dealt: int
-    move_name: str
-    targets_current_health: int
-    targets_total_health: int
-    targets_pre_reduced_health: int
-
-
-# TODO: Modify this, only for testing purposes right now
 class BattleResponse(BaseModel):
     """Response for attack."""
 
-    success: bool
     active: bool
     pending: bool
-    challenger_attack: Optional[AttackDetails]
-    challenged_attack: Optional[AttackDetails]
-
-
-# TODO: Change these to sub classes
+    round_details: Optional[RoundDetails]

@@ -1,4 +1,5 @@
 import random
+from typing import Literal
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,6 @@ from models.monster import MonsterInstance
 from models.move import Move
 from models.player import PlayerInstance
 from schemas.battle import (
-    AttackDetails,
     BattleResponse,
     CatchResponse,
     RoundDetails,
@@ -101,6 +101,10 @@ async def attempt_attack(
         )
 
     active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
+    active_turn.challenger_speed = 0
+    active_turn.challenged_speed = 0
+
+    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
 
     # TODO: Update dummy attack handling
     match encounter.encounter_type:
@@ -109,7 +113,7 @@ async def attempt_attack(
             active_turn = await set_turn_move(
                 db, active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
             )
-            return await resolve_turn(db, active_turn)
+            return await resolve_turn(db, active_turn, is_challenger)
         case EncounterType.PVP:
             await battle_crud.update_instance(db, active_turn)
 
@@ -119,30 +123,28 @@ async def attempt_attack(
                     encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
                 )
                 return BattleResponse(
-                    success=False,
                     active=False,
                     pending=True,
-                    challenger_attack=None,
-                    challenged_attack=None,
+                    round_details=None,
                 )
             else:
-                result = await resolve_turn(db, active_turn)
-                await encounter_service.notify_opponent(
-                    encounter, player.id, EventType.ROUND_RESOLVED
-                )
+                result = await resolve_turn(db, active_turn, is_challenger)
+                if result.active:
+                    round_details = await format_battle_turn(
+                        db, player, encounter, active_turn, is_opponent=True
+                    )
+                    await encounter_service.notify_opponent(
+                        encounter,
+                        player.id,
+                        EventType.ROUND_RESOLVED,
+                        round_details=round_details.model_dump(mode="json"),
+                    )
                 return result
         case _:
             raise HTTPException(
                 status_code=500,
                 detail="Invalid encounter type when attacking.",
             )
-    return BattleResponse(
-        success=False,
-        active=False,
-        pending=False,
-        challenger_attack=None,
-        challenged_attack=None,
-    )
 
 
 async def select_ai_move(db: AsyncSession, monster_id: int) -> Move:
@@ -152,7 +154,9 @@ async def select_ai_move(db: AsyncSession, monster_id: int) -> Move:
     return random.choice(move_list)
 
 
-async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
+async def resolve_turn(
+    db: AsyncSession, turn: BattleTurn, is_challenger: bool
+) -> BattleResponse:
     """Resolve the current turn."""
     challenger_mon = await monster_crud.get_by_instance_id(db, turn.challenger_mon_id)
     challenged_mon = await monster_crud.get_by_instance_id(db, turn.challenged_mon_id)
@@ -168,7 +172,12 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
     # TODO: Determine speed
 
     challenged_attack = await resolve_attack(
-        db, challenged_mon, challenger_mon, challenged_move
+        db,
+        challenged_mon,
+        challenger_mon,
+        challenged_move,
+        "challenged",
+        not is_challenger,
     )
     turn.challenged_move_missed = challenged_attack.missed
     if challenged_attack.missed:
@@ -178,17 +187,20 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
 
     # Check if the mon is dead
     if challenger_mon.current_hp < 1:
-        await resolve_battle(db, turn)
-        return BattleResponse(
-            success=True,
-            active=False,
-            pending=False,
-            challenger_attack=None,
-            challenged_attack=challenged_attack,
+        round_details = RoundDetails(
+            turn_number=turn.turn_number,
+            actions=[challenged_attack],
+            self_mon_status=None,
+            opponent_mon_status=None,
         )
+        battle_response = BattleResponse(
+            active=False, pending=False, round_details=round_details
+        )
+        await resolve_battle(db, turn, is_challenger)
+        return battle_response
 
     challenger_attack = await resolve_attack(
-        db, challenger_mon, challenged_mon, challenger_move
+        db, challenger_mon, challenged_mon, challenger_move, "challenger", is_challenger
     )
     turn.challenger_move_missed = challenger_attack.missed
     if challenger_attack.missed:
@@ -197,37 +209,51 @@ async def resolve_turn(db: AsyncSession, turn: BattleTurn) -> BattleTurn:
         turn.challenger_damage_dealt = challenger_attack.damage_dealt
 
     if challenged_mon.current_hp < 1:
-        await resolve_battle(db, turn)
-        return BattleResponse(
-            success=True,
-            active=False,
-            pending=False,
-            challenger_attack=challenger_attack,
-            challenged_attack=challenged_attack,
+        round_details = RoundDetails(
+            turn_number=turn.turn_number,
+            actions=[challenged_attack, challenger_attack],
+            self_mon_status=None,
+            opponent_mon_status=None,
         )
+        battle_response = BattleResponse(
+            active=False, pending=False, round_details=round_details
+        )
+        await resolve_battle(db, turn, is_challenger)
+        return battle_response
 
     turn.resolved = True
+    turn.challenger_speed = 0
+    turn.challenged_speed = 0
 
     await battle_crud.update_instance(db, turn)
     return BattleResponse(
-        success=True,
         active=True,
         pending=False,
-        challenger_attack=challenger_attack,
-        challenged_attack=challenged_attack,
+        round_details=RoundDetails(
+            turn_number=turn.turn_number,
+            actions=[challenger_attack, challenged_attack],
+            self_mon_status=None,
+            opponent_mon_status=None,
+        ),
     )
 
 
-async def resolve_battle(db: AsyncSession, turn: BattleTurn):
+async def resolve_battle(db: AsyncSession, turn: BattleTurn, is_challenger: bool):
     """Conclude the battle."""
-    # TODO: Better handling for battles
+
     encounter = await encounter_crud.get_by_id(db, turn.encounter_id)
-    await encounter_service.notify_opponent(
-        encounter, encounter.challenged_id, EventType.ENCOUNTER_OVER
+    actor_id = encounter.challenger_id if is_challenger else encounter.challenged_id
+    opponent = await player_crud.get_by_id(db, actor_id)
+    opponent_details = await format_battle_turn(
+        db, opponent, encounter, turn, is_opponent=True
     )
     await encounter_service.notify_opponent(
-        encounter, encounter.challenger_id, EventType.ENCOUNTER_OVER
+        encounter,
+        actor_id,
+        EventType.ENCOUNTER_OVER,
+        round_details=opponent_details.model_dump(mode="json"),
     )
+
     encounter.active = EncounterState.COMPLETED
     turn.resolved = True
     await battle_crud.update_instance(db, turn)
@@ -243,20 +269,28 @@ async def resolve_battle(db: AsyncSession, turn: BattleTurn):
 
 
 async def resolve_attack(
-    db: AsyncSession, _attacker: MonsterInstance, defender: MonsterInstance, move: Move
-) -> AttackDetails:
+    db: AsyncSession,
+    _attacker: MonsterInstance,
+    defender: MonsterInstance,
+    move: Move,
+    perspective: Literal["challenged", "challenger"],
+    is_self: bool = True,
+) -> TurnAction:
     """Resolve current attack."""
     # TODO: Improve accuracy check and damage calculation check
     # Accuracy check
+    actor = "self" if is_self else "opponent"
+
     if not random.random() * 100 < move.accuracy:
-        return AttackDetails(
-            first=False,
+        return TurnAction(
+            actor=actor,
+            actor_perspective=perspective,
+            message=format_action_message(is_self, move.name, True),
+            move_name=move.name,
             missed=True,
             damage_dealt=0,
-            move_name=move.name,
-            targets_current_health=defender.current_hp,
-            targets_total_health=defender.max_hp,
-            targets_pre_reduced_health=defender.current_hp,
+            target_max_health=defender.max_hp,
+            target_pre_damage_health=defender.current_hp,
         )
     # Calculate damage
     damage = move.power
@@ -265,18 +299,16 @@ async def resolve_attack(
     defender.current_hp = max(0, defender.current_hp - damage)
     await monster_crud.update_instance(db, defender)
 
-    return AttackDetails(
-        first=False,
+    return TurnAction(
+        actor=actor,
+        actor_perspective=perspective,
+        message=format_action_message(is_self, move.name, False),
+        move_name=move.name,
         missed=False,
         damage_dealt=damage,
-        move_name=move.name,
-        targets_current_health=defender.current_hp,
-        targets_total_health=defender.max_hp,
-        targets_pre_reduced_health=pre_reduced,
+        target_max_health=defender.max_hp,
+        target_pre_damage_health=pre_reduced,
     )
-
-
-# async def determine_action_order(db: AsyncSession, turn: BattleTurn):
 
 
 async def set_turn_move(
@@ -314,6 +346,8 @@ async def fetch_active_turn(db: AsyncSession, encounter: Encounter) -> BattleTur
                 challenged_damage_dealt=None,
                 challenger_move_missed=None,
                 challenged_move_missed=None,
+                challenged_speed=0,
+                challenger_speed=0,
                 resolved=False,
             ),
         )
@@ -332,6 +366,8 @@ async def fetch_active_turn(db: AsyncSession, encounter: Encounter) -> BattleTur
                 challenged_damage_dealt=None,
                 challenger_move_missed=None,
                 challenged_move_missed=None,
+                challenged_speed=0,
+                challenger_speed=0,
                 resolved=False,
             ),
         )
@@ -380,49 +416,75 @@ async def get_resolved_turn(
 
 
 async def format_battle_turn(
-    db: AsyncSession, player: PlayerInstance, encounter: Encounter, battle: BattleTurn
+    db: AsyncSession,
+    player: PlayerInstance,
+    encounter: Encounter,
+    battle: BattleTurn,
+    is_opponent: bool = False,
 ) -> RoundDetails:
     """Format turn details result."""
-    challenger_move = await move_crud.get_by_id(db, battle.challenger_move_id)
-    challenged_move = await move_crud.get_by_id(db, battle.challenged_move_id)
-    challenger_attack = TurnAction(
-        actor="self" if encounter.challenger_id == player.id else "opponent",
-        message=format_action_message(
-            encounter.challenger_id == player.id,
-            challenger_move.name,
-            battle.challenger_move_missed,
-        ),
-        move_name=challenger_move.name,
-        missed=battle.challenger_move_missed,
-        damage_dealt=battle.challenger_damage_dealt,
-        target_max_health=battle.challenged_max_hp,
-        target_pre_damage_health=battle.challenged_pre_damage_health,
-    )
-    challenged_attack = TurnAction(
-        actor="self" if encounter.challenged_id == player.id else "opponent",
-        message=format_action_message(
-            encounter.challenged_id == player.id,
-            challenged_move.name,
-            battle.challenged_move_missed,
-        ),
-        move_name=challenged_move.name,
-        missed=battle.challenged_move_missed,
-        damage_dealt=battle.challenged_damage_dealt,
-        target_max_health=battle.challenger_max_hp,
-        target_pre_damage_health=battle.challenger_pre_damage_health,
-    )
+
+    player_id = player.id
+    if is_opponent:
+        player_id = (
+            encounter.challenged_id
+            if encounter.challenger_id == player.id
+            else encounter.challenger_id
+        )
+
+    actions: list[TurnAction] = []
+
+    if None not in (battle.challenger_move_id, battle.challenger_move_missed):
+        challenger_move = await move_crud.get_by_id(db, battle.challenger_move_id)
+        is_self = encounter.challenger_id == player_id
+        actions.append(
+            TurnAction(
+                actor="self" if is_self else "opponent",
+                actor_perspective="challenger",
+                message=format_action_message(
+                    encounter.challenger_id == player_id,
+                    challenger_move.name,
+                    battle.challenger_move_missed,
+                ),
+                move_name=challenger_move.name,
+                missed=battle.challenger_move_missed,
+                damage_dealt=battle.challenger_damage_dealt,
+                target_max_health=battle.challenged_max_hp,
+                target_pre_damage_health=battle.challenged_pre_damage_health,
+            )
+        )
+
+    if None not in (battle.challenged_move_id, battle.challenged_move_missed):
+        challenged_move = await move_crud.get_by_id(db, battle.challenged_move_id)
+        is_self = encounter.challenged_id == player_id
+        actions.append(
+            TurnAction(
+                actor="self" if is_self else "opponent",
+                actor_perspective="challenged",
+                message=format_action_message(
+                    encounter.challenged_id == player_id,
+                    challenged_move.name,
+                    battle.challenged_move_missed,
+                ),
+                move_name=challenged_move.name,
+                missed=battle.challenged_move_missed,
+                damage_dealt=battle.challenged_damage_dealt,
+                target_max_health=battle.challenger_max_hp,
+                target_pre_damage_health=battle.challenger_pre_damage_health,
+            )
+        )
 
     # TODO: add turn ordering
     # TODO: add status effects
     return RoundDetails(
         turn_number=battle.turn_number,
-        actions=[challenger_attack, challenged_attack],
+        actions=actions,
         self_mon_status=StatusEffect(),
         opponent_mon_status=StatusEffect(),
     )
 
 
-def format_action_message(is_self, move_name, missed) -> str:
+def format_action_message(is_self: bool, move_name: str, missed: bool) -> str:
     """Format action display."""
     perspective = "You" if is_self else "Opp"
     missed = ". Missed!" if missed else ""
