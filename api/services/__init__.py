@@ -4,3 +4,4 @@ from . import monster as monster_service
 from . import move as move_service
 from . import player as player_service
 from . import rift as rift_service
+from . import shop as shop_service

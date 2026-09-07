@@ -9,6 +9,8 @@ $(VENV): requirements.txt ## Create the venv and install the requirements
 seed: $(VENV) ## Seed the data in the database
 	$(PYTHON) seed.py moves
 	$(PYTHON) seed.py species
+	$(PYTHON) seed.py shops
+
 
 clean: ## Remove the venv
 	rm -rf $(VENV)

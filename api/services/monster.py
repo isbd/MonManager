@@ -75,6 +75,18 @@ async def grab_players_monster(
     return monsters[0]
 
 
+async def heal_players_monster(
+    db: AsyncSession, player_id: int
+) -> bool:
+    """Heal players first monster instance."""
+    monster = await grab_players_monster(db, player_id)
+    if monster is None:
+        return False
+    monster.current_hp = monster.max_hp
+    await monster_crud.update_instance(db, monster)
+    return True
+
+
 async def party_fight_validation(db: AsyncSession, player: PlayerInstance):
     """Ensure a player's party is valid for an encounter."""
     mon_instance = await grab_players_monster(db, player.id)
