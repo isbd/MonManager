@@ -24,7 +24,6 @@ async def create_rift(
     # 5 minutes
     duration = 300000
 
-    """Create a rift."""
     rift_instance = RiftInstance(
         x_coord=x_coord,
         z_coord=z_coord,

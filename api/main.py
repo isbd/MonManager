@@ -7,7 +7,7 @@ import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
 from models.base import Base
-from routes import battle, encounter, monster, player, rift, websocket
+from routes import battle, encounter, monster, player, rift, shop, websocket
 
 
 @asynccontextmanager
@@ -43,6 +43,12 @@ app.include_router(
     rift.router,
     prefix="/rift",
     tags=["Rift"],
+    dependencies=[Depends(get_current_player)],
+)
+app.include_router(
+    shop.router,
+    prefix="/shop",
+    tags=["Shop"],
     dependencies=[Depends(get_current_player)],
 )
 

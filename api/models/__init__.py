@@ -1,1 +1,1 @@
-from . import battle, encounter, monster, move, player, rift
+from . import battle, encounter, monster, move, player, rift, shop

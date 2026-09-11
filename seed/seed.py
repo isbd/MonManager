@@ -4,7 +4,7 @@ import json
 
 
 def seed_species(engine):
-    print("Populated species")
+    print("Populate species")
     metadata = MetaData()
     metadata.reflect(bind=engine)
     species_table = metadata.tables["species"]
@@ -37,7 +37,7 @@ def seed_species(engine):
 
 
 def seed_moves(engine):
-    print("Populated moves")
+    print("Populate moves")
     metadata = MetaData()
     metadata.reflect(bind=engine)
     moves_table = metadata.tables["moves"]
@@ -55,6 +55,25 @@ def seed_moves(engine):
                 row["accuracy"] = entry["accuracy"]
 
             conn.execute(insert(moves_table), [row])
+        conn.commit()
+
+
+def seed_shop(engine):
+    print("Populate shops")
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    shop_table = metadata.tables["shop_instances"]
+
+    with engine.connect() as conn:
+        data = read_json("data/shops.json")
+        for entry in data:
+            row = {
+                "x_coord": entry.get("x_coord"),
+                "z_coord": entry.get("z_coord"),
+                "radius": entry.get("radius")
+            }
+
+            conn.execute(insert(shop_table), [row])
         conn.commit()
 
 
@@ -87,6 +106,8 @@ def main():
         seed_species(engine)
     elif command == "moves":
         seed_moves(engine)
+    elif command == "shops":
+        seed_shop(engine)
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)

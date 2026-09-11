@@ -16,7 +16,7 @@ class RiftType(enum.Enum):
 
 
 class RiftInstance(Base):
-    __tablename__ = "rift_instance"
+    __tablename__ = "rift_instances"
 
     id = Column(Integer, primary_key=True)
     x_coord = Column(Integer, nullable=False)
