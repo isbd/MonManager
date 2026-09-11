@@ -75,9 +75,7 @@ async def grab_players_monster(
     return monsters[0]
 
 
-async def heal_players_monster(
-    db: AsyncSession, player_id: int
-) -> bool:
+async def heal_players_monster(db: AsyncSession, player_id: int) -> bool:
     """Heal players first monster instance."""
     monster = await grab_players_monster(db, player_id)
     if monster is None:

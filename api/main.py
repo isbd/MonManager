@@ -7,7 +7,7 @@ import models  # noqa: F401
 from database import engine
 from dependencies import get_current_player
 from models.base import Base
-from routes import battle, encounter, monster, player, rift, websocket, shop
+from routes import battle, encounter, monster, player, rift, shop, websocket
 
 
 @asynccontextmanager
