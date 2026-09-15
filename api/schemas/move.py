@@ -2,6 +2,8 @@ from pydantic import BaseModel
 
 
 class MoveInformation(BaseModel):
+    """Move information."""
+
     name: str
     power: int
     accuracy: int
@@ -10,4 +12,6 @@ class MoveInformation(BaseModel):
 
 
 class MonsterMoveResponse(BaseModel):
+    """List of moves response."""
+
     moves: list[MoveInformation]

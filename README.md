@@ -202,7 +202,7 @@ Firewall rules may apply, check connect-ability with the following
 
 ## Makefile commands
 
-```bash
+```
 build-clean:     Build the containers fresh
 build:           Build the containers
 db-command:      Enter postgres container for SQL commands

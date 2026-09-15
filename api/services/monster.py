@@ -1,10 +1,11 @@
 import datetime
 import random
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import services.party as party_service
 from crud import monster_crud, move_crud
 from models.monster import MonsterInstance, MonsterSpecies
 from models.move import MoveInstance
@@ -22,6 +23,15 @@ def reverse_monster_image(image_text: str) -> str:
     for line in image_text.split("\n"):
         new_image_text += f"{line[::-1]}\n"
     return new_image_text[:-1]
+
+
+async def resolve_monster(
+    db: AsyncSession, ref: Union[int, MonsterInstance]
+) -> MonsterInstance:
+    """Resolve potential monster id into instance."""
+    if isinstance(ref, MonsterInstance):
+        return ref
+    return await monster_crud.get_full_by_instance_id(db, ref)
 
 
 async def roll_species(db: AsyncSession, by_time: bool = True) -> MonsterSpecies:
@@ -43,16 +53,23 @@ async def roll_species(db: AsyncSession, by_time: bool = True) -> MonsterSpecies
 
 
 async def create_monster_instance(
-    db: AsyncSession, species: MonsterSpecies, owner_id: int = None
+    db: AsyncSession, species: MonsterSpecies, owner: PlayerInstance
 ) -> MonsterInstance:
     """Create an instance of a monster."""
-    # TODO: Randomize the stats. Optionally set owner_id
+    # TODO: Randomize the stats.
+    owner_id = None
+    party_slot = None
+    if owner is not None:
+        owner_id = owner.id
+        empty_slots = await party_service.get_empty_slots(db, owner)
+        if empty_slots:
+            party_slot = empty_slots[0]
     monster = MonsterInstance(
         species_id=species.id,
         max_hp=30,
         current_hp=30,
         level=1,
-        in_party=False,
+        party_slot=party_slot,
         owner_id=owner_id,
     )
 

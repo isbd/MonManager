@@ -2,6 +2,8 @@ from enum import StrEnum
 
 
 class EventType(StrEnum):
+    """Enums for websocket events."""
+
     CHALLENGE_RECEIVED = "challenge_received"
     CHALLENGE_RESPONSE = "challenge_response"
     CHALLENGE_CANCELED = "challenge_canceled"

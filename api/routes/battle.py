@@ -20,6 +20,9 @@ async def attempt_catch(
     return await battle_service.attempt_catch(db, player)
 
 
+# TODO:Switch monster option.
+
+
 @router.post("/attack", response_model=BattleResponse)
 async def attempt_attack(
     body: AttackRequest,

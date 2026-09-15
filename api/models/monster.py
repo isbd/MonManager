@@ -1,7 +1,18 @@
-from sqlalchemy import JSON, Boolean, Column, Enum, ForeignKey, Integer, String
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Column,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
+
+PARTY_SIZE = 6
 
 
 class MonsterSpecies(Base):
@@ -25,10 +36,19 @@ class MonsterSpecies(Base):
 
 class MonsterInstance(Base):
     __tablename__ = "monster_instances"
+    __table_args__ = (
+        UniqueConstraint("owner_id", "party_slot", name="uq_owner_party_slot"),
+    )
 
     id = Column(Integer, primary_key=True)
     nickname = Column(String)
-    in_party = Column(Boolean, default=False, nullable=False)
+    party_slot = Column(
+        Integer,
+        CheckConstraint(
+            f"party_slot BETWEEN 1 AND {PARTY_SIZE}", name="party_slot_range"
+        ),
+        nullable=True,
+    )
 
     current_hp = Column(Integer, nullable=False)
     max_hp = Column(Integer, nullable=False)
@@ -41,3 +61,7 @@ class MonsterInstance(Base):
 
     species = relationship("MonsterSpecies")
     owner = relationship("PlayerInstance", back_populates="monsters")
+
+    @property
+    def in_party(self):
+        return self.party_slot is not None

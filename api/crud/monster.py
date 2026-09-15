@@ -83,3 +83,52 @@ async def update_instance(
     await db.commit()
     await db.refresh(monster_instance)
     return monster_instance
+
+
+# Party logic
+async def get_party(db: AsyncSession, player_id: int) -> list[MonsterInstance]:
+    """Fetch player's party ordered by slot."""
+    result = await db.execute(
+        select(MonsterInstance)
+        .where(
+            MonsterInstance.owner_id == player_id,
+            MonsterInstance.party_slot.is_not(None),
+        )
+        .order_by(MonsterInstance.party_slot)
+        .options(joinedload(MonsterInstance.species))
+    )
+    return result.scalars().all()
+
+
+async def get_used_party_slots(db: AsyncSession, player_id: int) -> set[int]:
+    """List of used slots."""
+    result = await db.execute(
+        select(MonsterInstance.party_slot)
+        .where(
+            MonsterInstance.owner_id == player_id,
+            MonsterInstance.party_slot.is_not(None),
+        )
+        .order_by(MonsterInstance.party_slot)
+    )
+    return set(result.scalars().all())
+
+
+async def get_party_slot(
+    db: AsyncSession, player_id: int, slot: int
+) -> Optional[MonsterInstance]:
+    """Fetch player's monster in specified slot."""
+    result = await db.execute(
+        select(MonsterInstance).where(
+            MonsterInstance.owner_id == player_id,
+            MonsterInstance.party_slot == slot,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def set_party_slot(
+    db: AsyncSession, monster: MonsterInstance, slot: Optional[int]
+) -> None:
+    """Set a monster's slot."""
+    monster.party_slot = slot
+    await db.flush()
