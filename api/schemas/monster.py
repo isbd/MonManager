@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -22,7 +22,7 @@ class MonstersResponse(BaseModel):
     max_hp: int
     level: int
     species: MonsterSpeciesInfo
-    party_slot: int
+    party_slot: Union[int, None]
 
     class Config:
         from_attributes = True

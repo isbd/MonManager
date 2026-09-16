@@ -37,7 +37,13 @@ class MonsterSpecies(Base):
 class MonsterInstance(Base):
     __tablename__ = "monster_instances"
     __table_args__ = (
-        UniqueConstraint("owner_id", "party_slot", name="uq_owner_party_slot"),
+        UniqueConstraint(
+            "owner_id",
+            "party_slot",
+            name="uq_owner_party_slot",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
     )
 
     id = Column(Integer, primary_key=True)

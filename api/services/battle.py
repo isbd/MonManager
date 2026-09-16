@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import services.encounter as encounter_service
 import services.move as move_service
+import services.party as party_service
 from crud import battle_crud, encounter_crud, monster_crud, move_crud, player_crud
 from models.battle import BattleTurn
 from models.encounter import (
@@ -48,6 +49,7 @@ async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchRespon
     monster = await monster_crud.update_instance(db, monster)
 
     await encounter_service.resolve_encounter(db, encounter)
+    await party_service.auto_assign(db, player, monster)
 
     return CatchResponse(
         success=True,
