@@ -92,30 +92,82 @@ async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchRespon
     )
 
 
-async def attempt_swap(
-    db: AsyncSession, player: PlayerInstance, slot: int
-) -> BattleResponse:
+async def fetch_turn_context(
+    db: AsyncSession, player: PlayerInstance
+) -> tuple[Encounter, BattleTurn, EncounterPerspective]:
+    """Fetch context for current turn."""
     encounter = await encounter_service.fetch_player_encounter(db, player)
-
     if encounter.active is not EncounterState.ACTIVE:
         # TODO: Alternative handling when not active
         raise HTTPException(
             status_code=400,
             detail="Encounter is no longer active, update code for handle.",
         )
-
-    active_turn = await fetch_active_turn(db, encounter)
-    active_perspective = encounter_service.get_encounter_perspective(
-        encounter, player.id
-    )
-
-    if active_perspective is None:
+    perspective = encounter_service.get_encounter_perspective(encounter, player.id)
+    if perspective is None:
         raise HTTPException(
-            status_code=500,
-            detail="Failed to grab active perspective.",
+            status_code=403,
+            detail="User missing from encounter.",
         )
+    turn = await fetch_active_turn(db, encounter)
+    return encounter, turn, perspective
 
-    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
+
+async def advance_turn(
+    db: AsyncSession,
+    player: PlayerInstance,
+    encounter: Encounter,
+    turn: BattleTurn,
+    perspective: EncounterPerspective,
+) -> BattleResponse:
+    """Progress the current turn based on the current turn information."""
+    is_challenger = perspective is EncounterPerspective.CHALLENGER
+    match encounter.encounter_type:
+        case EncounterType.WILD:
+            ai_move = await select_ai_move(db, encounter.challenged_mon_id)
+            turn = set_turn_move(turn, EncounterPerspective.CHALLENGED, ai_move.move_id)
+            return await resolve_turn(db, turn, is_challenger)
+        case EncounterType.PVP:
+            await battle_crud.update_instance(db, turn)
+
+            if False in (
+                turn.challenger_submitted,
+                turn.challenged_submitted,
+            ):
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
+                )
+                return BattleResponse(
+                    active=False,
+                    pending=True,
+                    round_details=None,
+                )
+
+            result = await resolve_turn(db, turn, is_challenger)
+            if result.active:
+                round_details = await format_battle_turn(
+                    db, player, encounter, turn, is_opponent=True
+                )
+                await encounter_service.notify_opponent(
+                    encounter,
+                    player.id,
+                    EventType.ROUND_RESOLVED,
+                    round_details=round_details.model_dump(mode="json"),
+                )
+            return result
+        case _:
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid encounter type when attacking.",
+            )
+
+
+async def attempt_swap(
+    db: AsyncSession, player: PlayerInstance, slot: int
+) -> BattleResponse:
+    encounter, active_turn, perspective = await fetch_turn_context(db, player)
+
+    is_challenger = perspective is EncounterPerspective.CHALLENGER
 
     is_already_submitted = (
         active_turn.challenger_submitted
@@ -137,74 +189,15 @@ async def attempt_swap(
         active_turn.challenged_swap = swap_monster.id
         active_turn.challenged_submitted = True
 
-    # TODO: Update dummy attack handling
-    match encounter.encounter_type:
-        case EncounterType.WILD:
-            ai_move = await select_ai_move(db, encounter.challenged_mon_id)
-            active_turn = set_turn_move(
-                active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
-            )
-            return await resolve_turn(db, active_turn, is_challenger)
-        case EncounterType.PVP:
-            await battle_crud.update_instance(db, active_turn)
-
-            if False in (
-                active_turn.challenger_submitted,
-                active_turn.challenged_submitted,
-            ):
-                await encounter_service.notify_opponent(
-                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
-                )
-                return BattleResponse(
-                    active=False,
-                    pending=True,
-                    round_details=None,
-                )
-
-            result = await resolve_turn(db, active_turn, is_challenger)
-            if result.active:
-                round_details = await format_battle_turn(
-                    db, player, encounter, active_turn, is_opponent=True
-                )
-                await encounter_service.notify_opponent(
-                    encounter,
-                    player.id,
-                    EventType.ROUND_RESOLVED,
-                    round_details=round_details.model_dump(mode="json"),
-                )
-            return result
-        case _:
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid encounter type when attacking.",
-            )
+    return await advance_turn(db, player, encounter, active_turn, perspective)
 
 
 async def attempt_attack(
     db: AsyncSession, player: PlayerInstance, attack_id: int
 ) -> BattleResponse:
     """Attempt to attack."""
-    encounter = await encounter_service.fetch_player_encounter(db, player)
-
-    if encounter.active is not EncounterState.ACTIVE:
-        # TODO: Alternative handling when not active
-        raise HTTPException(
-            status_code=400,
-            detail="Encounter is no longer active, update code for handle.",
-        )
-
-    active_turn = await fetch_active_turn(db, encounter)
-
-    active_perspective = encounter_service.get_encounter_perspective(
-        encounter, player.id
-    )
-
-    if active_perspective is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to grab active perspective.",
-        )
-    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
+    encounter, active_turn, perspective = await fetch_turn_context(db, player)
+    is_challenger = perspective is EncounterPerspective.CHALLENGER
 
     self_mon_id = (
         encounter.challenger_mon_id if is_challenger else encounter.challenged_mon_id
@@ -228,54 +221,14 @@ async def attempt_attack(
             detail="You already have a move selected.",
         )
 
-    active_turn = set_turn_move(active_turn, active_perspective, move.move_id)
+    active_turn = set_turn_move(active_turn, perspective, move.move_id)
 
     if is_challenger:
         active_turn.challenger_submitted = True
     else:
         active_turn.challenged_submitted = True
 
-    # TODO: Update dummy attack handling
-    match encounter.encounter_type:
-        case EncounterType.WILD:
-            ai_move = await select_ai_move(db, encounter.challenged_mon_id)
-            active_turn = set_turn_move(
-                active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
-            )
-            return await resolve_turn(db, active_turn, is_challenger)
-        case EncounterType.PVP:
-            await battle_crud.update_instance(db, active_turn)
-
-            if False in (
-                active_turn.challenger_submitted,
-                active_turn.challenged_submitted,
-            ):
-                await encounter_service.notify_opponent(
-                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
-                )
-                return BattleResponse(
-                    active=False,
-                    pending=True,
-                    round_details=None,
-                )
-
-            result = await resolve_turn(db, active_turn, is_challenger)
-            if result.active:
-                round_details = await format_battle_turn(
-                    db, player, encounter, active_turn, is_opponent=True
-                )
-                await encounter_service.notify_opponent(
-                    encounter,
-                    player.id,
-                    EventType.ROUND_RESOLVED,
-                    round_details=round_details.model_dump(mode="json"),
-                )
-            return result
-        case _:
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid encounter type when attacking.",
-            )
+    return await advance_turn(db, player, encounter, active_turn, perspective)
 
 
 async def select_ai_move(db: AsyncSession, monster_id: int) -> Move:
