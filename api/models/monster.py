@@ -59,6 +59,7 @@ class MonsterInstance(Base):
     current_hp = Column(Integer, nullable=False)
     max_hp = Column(Integer, nullable=False)
     level = Column(Integer, nullable=False)
+    speed = Column(Integer, nullable=False)
 
     moves = relationship("MoveInstance", cascade="all, delete-orphan")
 

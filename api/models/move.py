@@ -33,6 +33,7 @@ class Move(Base):
 
     power = Column(Integer, nullable=False)
     accuracy = Column(Integer, nullable=False)
+    speed = Column(Integer, nullable=False)
 
     # Stats
     # type_id = Column(Integer, ForeignKey("monster_types.id"))

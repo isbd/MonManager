@@ -10,6 +10,7 @@ class EventType(StrEnum):
     ROUND_PENDING_YOUR_MOVE = "round_pending_your_move"
     ROUND_RESOLVED = "round_resolved"
     ENCOUNTER_OVER = "encounter_over"
+    OPPONENT_MONSTER_FILLED = "opponent_monster_filled"
     BATTLE_FORFEITED = "battle_forfeited"
     TURN_NOTIFICATION = "turn_notificiation"
     SOCKET_CLOSED = "challenge_result"

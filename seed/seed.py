@@ -53,6 +53,10 @@ def seed_moves(engine):
                 row["power"] = entry["power"]
             if "accuracy" in entry:
                 row["accuracy"] = entry["accuracy"]
+            if "speed" in entry:
+                row["speed"] = entry["speed"]
+            else:
+                row["speed"] = 50
 
             conn.execute(insert(moves_table), [row])
         conn.commit()

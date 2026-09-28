@@ -30,6 +30,7 @@ def validate_party_management(player: PlayerInstance) -> None:
 async def get_formatted_party(
     db: AsyncSession, player: PlayerInstance
 ) -> GetPartyReponse:
+    """Fetch formatted party for output including empty slots."""
     party_response = await get_party(db, player)
     idx = 0
     formatted_monsters = []
@@ -103,6 +104,18 @@ async def swap_slots(
         player.active_slot = slot_a
     await db.commit()
     return SwapResponse(success=True)
+
+
+async def fetch_swappable(
+    db: AsyncSession, player: PlayerInstance, slot: int
+) -> MonsterInstance:
+    """Grab valid swappable monster."""
+    slot_mon = await monster_crud.get_party_slot(db, player.id, slot)
+    if slot_mon is None or slot_mon.current_hp <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid slot to set as active.",
+        )
 
 
 async def auto_assign(

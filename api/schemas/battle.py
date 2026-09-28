@@ -17,6 +17,17 @@ class AttackRequest(BaseModel):
     attack_id: int
 
 
+class SwapRequest(BaseModel):
+    """Request to swap."""
+
+    slot: int
+
+
+class FillResponse(BaseModel):
+    success: bool
+    message: str
+
+
 class StatusEffect(BaseModel):
     """Details about a monsters status effect in a turn."""
 

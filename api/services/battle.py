@@ -21,12 +21,46 @@ from models.player import PlayerInstance
 from schemas.battle import (
     BattleResponse,
     CatchResponse,
+    FillResponse,
     RoundDetails,
     StatusEffect,
     TurnAction,
 )
 from schemas.event import EventType
 from schemas.move import MonsterMoveResponse
+
+
+async def attempt_fill(
+    db: AsyncSession, player: PlayerInstance, slot: int
+) -> FillResponse:
+    """Attempt to fill empty active after monster death."""
+    current_monster = await monster_crud.get_party_slot(
+        db, player.id, player.active_slot
+    )
+    if not current_monster:
+        raise HTTPException(
+            status_code=500,
+            detail="Active slot is not set as expected in attempted fill.",
+        )
+    if current_monster.current_hp > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot fill with healthy monster.",
+        )
+    slot_mon = await monster_crud.get_party_slot(db, player.id, slot)
+    if slot_mon is None or slot_mon.current_hp <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid slot to set as active.",
+        )
+    await party_service.set_active(db, player, slot)
+    await encounter_service.set_player_monster(db, player, slot_mon)
+    # Notify the opponent of the swap
+    encounter = await encounter_service.fetch_player_encounter(db, player)
+    await encounter_service.notify_opponent(
+        encounter, player.id, EventType.OPPONENT_MONSTER_FILLED
+    )
+    return FillResponse(success=True, message="Swapped...")
 
 
 async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchResponse:
@@ -58,6 +92,94 @@ async def attempt_catch(db: AsyncSession, player: PlayerInstance) -> CatchRespon
     )
 
 
+async def attempt_swap(
+    db: AsyncSession, player: PlayerInstance, slot: int
+) -> BattleResponse:
+    encounter = await encounter_service.fetch_player_encounter(db, player)
+
+    if encounter.active is not EncounterState.ACTIVE:
+        # TODO: Alternative handling when not active
+        raise HTTPException(
+            status_code=400,
+            detail="Encounter is no longer active, update code for handle.",
+        )
+
+    active_turn = await fetch_active_turn(db, encounter)
+    active_perspective = encounter_service.get_encounter_perspective(
+        encounter, player.id
+    )
+
+    if active_perspective is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to grab active perspective.",
+        )
+
+    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
+
+    is_already_submitted = (
+        active_turn.challenger_submitted
+        if is_challenger
+        else active_turn.challenged_submitted
+    )
+    if is_already_submitted:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have a move selected.",
+        )
+    # TODO: finish this logic
+
+    swap_monster = await party_service.fetch_swappable(db, player, slot)
+    if is_challenger:
+        active_turn.challenger_swap = swap_monster.id
+        active_turn.challenger_submitted = True
+    else:
+        active_turn.challenged_swap = swap_monster.id
+        active_turn.challenged_submitted = True
+
+    # TODO: Update dummy attack handling
+    match encounter.encounter_type:
+        case EncounterType.WILD:
+            ai_move = await select_ai_move(db, encounter.challenged_mon_id)
+            active_turn = set_turn_move(
+                active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
+            )
+            return await resolve_turn(db, active_turn, is_challenger)
+        case EncounterType.PVP:
+            await battle_crud.update_instance(db, active_turn)
+
+            if False in (
+                active_turn.challenger_submitted,
+                active_turn.challenged_submitted,
+            ):
+                await encounter_service.notify_opponent(
+                    encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
+                )
+                return BattleResponse(
+                    active=False,
+                    pending=True,
+                    round_details=None,
+                )
+
+            result = await resolve_turn(db, active_turn, is_challenger)
+            if result.active:
+                round_details = await format_battle_turn(
+                    db, player, encounter, active_turn, is_opponent=True
+                )
+                await encounter_service.notify_opponent(
+                    encounter,
+                    player.id,
+                    EventType.ROUND_RESOLVED,
+                    round_details=round_details.model_dump(mode="json"),
+                )
+            return result
+        case _:
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid encounter type when attacking.",
+            )
+
+
 async def attempt_attack(
     db: AsyncSession, player: PlayerInstance, attack_id: int
 ) -> BattleResponse:
@@ -71,14 +193,6 @@ async def attempt_attack(
             detail="Encounter is no longer active, update code for handle.",
         )
 
-    move = await move_crud.get_monster_move_by_slot(
-        db, encounter.challenger_mon_id, attack_id
-    )
-    if not move:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid move type while attacking.",
-        )
     active_turn = await fetch_active_turn(db, encounter)
 
     active_perspective = encounter_service.get_encounter_perspective(
@@ -90,11 +204,23 @@ async def attempt_attack(
             status_code=500,
             detail="Failed to grab active perspective.",
         )
+    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
+
+    self_mon_id = (
+        encounter.challenger_mon_id if is_challenger else encounter.challenged_mon_id
+    )
+
+    move = await move_crud.get_monster_move_by_slot(db, self_mon_id, attack_id)
+    if not move:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid move type while attacking.",
+        )
 
     is_already_submitted = (
-        active_turn.challenger_move_id is not None
-        if active_perspective is EncounterPerspective.CHALLENGER
-        else active_turn.challenged_move_id is not None
+        active_turn.challenger_submitted
+        if is_challenger
+        else active_turn.challenged_submitted
     )
     if is_already_submitted:
         raise HTTPException(
@@ -102,25 +228,28 @@ async def attempt_attack(
             detail="You already have a move selected.",
         )
 
-    active_turn = await set_turn_move(db, active_turn, active_perspective, move.move_id)
-    active_turn.challenger_speed = 0
-    active_turn.challenged_speed = 0
+    active_turn = set_turn_move(active_turn, active_perspective, move.move_id)
 
-    is_challenger = active_perspective is EncounterPerspective.CHALLENGER
+    if is_challenger:
+        active_turn.challenger_submitted = True
+    else:
+        active_turn.challenged_submitted = True
 
     # TODO: Update dummy attack handling
     match encounter.encounter_type:
         case EncounterType.WILD:
             ai_move = await select_ai_move(db, encounter.challenged_mon_id)
-            active_turn = await set_turn_move(
-                db, active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
+            active_turn = set_turn_move(
+                active_turn, EncounterPerspective.CHALLENGED, ai_move.move_id
             )
             return await resolve_turn(db, active_turn, is_challenger)
         case EncounterType.PVP:
             await battle_crud.update_instance(db, active_turn)
 
-            # TODO: May need to adjust if it's possible to have a turn without a move
-            if None in (active_turn.challenger_move_id, active_turn.challenged_move_id):
+            if False in (
+                active_turn.challenger_submitted,
+                active_turn.challenged_submitted,
+            ):
                 await encounter_service.notify_opponent(
                     encounter, player.id, EventType.ROUND_PENDING_YOUR_MOVE
                 )
@@ -129,19 +258,19 @@ async def attempt_attack(
                     pending=True,
                     round_details=None,
                 )
-            else:
-                result = await resolve_turn(db, active_turn, is_challenger)
-                if result.active:
-                    round_details = await format_battle_turn(
-                        db, player, encounter, active_turn, is_opponent=True
-                    )
-                    await encounter_service.notify_opponent(
-                        encounter,
-                        player.id,
-                        EventType.ROUND_RESOLVED,
-                        round_details=round_details.model_dump(mode="json"),
-                    )
-                return result
+
+            result = await resolve_turn(db, active_turn, is_challenger)
+            if result.active:
+                round_details = await format_battle_turn(
+                    db, player, encounter, active_turn, is_opponent=True
+                )
+                await encounter_service.notify_opponent(
+                    encounter,
+                    player.id,
+                    EventType.ROUND_RESOLVED,
+                    round_details=round_details.model_dump(mode="json"),
+                )
+            return result
         case _:
             raise HTTPException(
                 status_code=500,
@@ -160,10 +289,29 @@ async def resolve_turn(
     db: AsyncSession, turn: BattleTurn, is_challenger: bool
 ) -> BattleResponse:
     """Resolve the current turn."""
-    challenger_mon = await monster_crud.get_by_instance_id(db, turn.challenger_mon_id)
     challenged_mon = await monster_crud.get_by_instance_id(db, turn.challenged_mon_id)
-    challenged_move = await move_crud.get_by_id(db, turn.challenged_move_id)
-    challenger_move = await move_crud.get_by_id(db, turn.challenger_move_id)
+
+    if turn.challenger_swap is not None:
+        challenger_mon = await monster_crud.get_by_instance_id(db, turn.challenger_swap)
+        challenger_move = None
+        challenger_speed = 0
+    else:
+        challenger_mon = await monster_crud.get_by_instance_id(
+            db, turn.challenger_mon_id
+        )
+        challenger_move = await move_crud.get_by_id(db, turn.challenger_move_id)
+        challenger_speed = determine_speed(challenger_mon, challenger_move)
+
+    if turn.challenged_swap is not None:
+        challenged_mon = await monster_crud.get_by_instance_id(db, turn.challenged_swap)
+        challenged_move = None
+        challenged_speed = 0
+    else:
+        challenged_mon = await monster_crud.get_by_instance_id(
+            db, turn.challenged_mon_id
+        )
+        challenged_move = await move_crud.get_by_id(db, turn.challenged_move_id)
+        challenged_speed = determine_speed(challenged_mon, challenged_move)
 
     # Required for snapshot of battle
     turn.challenged_pre_damage_health = challenged_mon.current_hp
@@ -171,61 +319,94 @@ async def resolve_turn(
     turn.challenger_max_hp = challenger_mon.max_hp
     turn.challenged_max_hp = challenged_mon.max_hp
 
-    # TODO: Determine speed
+    actions: list[TurnAction] = []
+    move_order = [EncounterPerspective.CHALLENGER, EncounterPerspective.CHALLENGED]
 
-    challenged_attack = await resolve_attack(
-        db,
-        challenged_mon,
-        challenger_mon,
-        challenged_move,
-        "challenged",
-        not is_challenger,
-    )
-    turn.challenged_move_missed = challenged_attack.missed
-    if challenged_attack.missed:
-        turn.challenged_damage_dealt = 0
-    else:
-        turn.challenged_damage_dealt = challenged_attack.damage_dealt
+    encounter = await encounter_crud.get_by_id(db, turn.encounter_id)
 
-    # Check if the mon is dead
-    if challenger_mon.current_hp < 1:
-        round_details = RoundDetails(
-            turn_number=turn.turn_number,
-            actions=[challenged_attack],
-            self_mon_status=None,
-            opponent_mon_status=None,
+    if turn.challenger_swap is not None:
+        await apply_swap(db, encounter, EncounterPerspective.CHALLENGER, challenger_mon)
+        actions.append(
+            TurnAction(
+                actor="self" if is_challenger else "opponent",
+                actor_perspective="challenger",
+                message="Swapped monster",
+                move_name="swap",
+                missed=False,
+                damage_dealt=0,
+                target_max_health=challenged_mon.max_hp,
+                target_pre_damage_health=challenged_mon.current_hp,
+            )
         )
-        battle_response = BattleResponse(
-            active=False, pending=False, round_details=round_details
-        )
-        await resolve_battle(db, turn, is_challenger)
-        return battle_response
+        move_order.remove(EncounterPerspective.CHALLENGER)
 
-    challenger_attack = await resolve_attack(
-        db, challenger_mon, challenged_mon, challenger_move, "challenger", is_challenger
-    )
-    turn.challenger_move_missed = challenger_attack.missed
-    if challenger_attack.missed:
-        turn.challenger_damage_dealt = 0
-    else:
-        turn.challenger_damage_dealt = challenger_attack.damage_dealt
+    if turn.challenged_swap is not None:
+        await apply_swap(db, encounter, EncounterPerspective.CHALLENGED, challenged_mon)
+        actions.append(
+            TurnAction(
+                actor="self" if not is_challenger else "opponent",
+                actor_perspective="challenged",
+                message="Swapped monster",
+                move_name="swap",
+                missed=False,
+                damage_dealt=0,
+                target_max_health=challenger_mon.max_hp,
+                target_pre_damage_health=challenger_mon.current_hp,
+            )
+        )
+        move_order.remove(EncounterPerspective.CHALLENGED)
 
-    if challenged_mon.current_hp < 1:
-        round_details = RoundDetails(
-            turn_number=turn.turn_number,
-            actions=[challenged_attack, challenger_attack],
-            self_mon_status=None,
-            opponent_mon_status=None,
+    if challenger_speed == challenged_speed:
+        random.shuffle(move_order)
+    elif challenged_speed < challenger_speed:
+        move_order.reverse()
+
+    turn.first_actor = move_order[0] if move_order else None
+
+    for move in move_order:
+        if move is EncounterPerspective.CHALLENGED:
+            mon = challenged_mon
+            target_mon = challenger_mon
+            mon_move = challenged_move
+            title = "challenged"
+            is_self = not is_challenger
+        else:
+            mon = challenger_mon
+            target_mon = challenged_mon
+            mon_move = challenger_move
+            title = "challenger"
+            is_self = is_challenger
+
+        attack_result = await resolve_attack(
+            db, mon, target_mon, mon_move, title, is_self
         )
-        battle_response = BattleResponse(
-            active=False, pending=False, round_details=round_details
-        )
-        await resolve_battle(db, turn, is_challenger)
-        return battle_response
+        actions.append(attack_result)
+
+        if move is EncounterPerspective.CHALLENGED:
+            turn.challenged_damage_dealt = 0
+            turn.challenged_move_missed = attack_result.missed
+            if not attack_result.missed:
+                turn.challenged_damage_dealt = attack_result.damage_dealt
+        else:
+            turn.challenger_damage_dealt = 0
+            turn.challenger_move_missed = attack_result.missed
+            if not attack_result.missed:
+                turn.challenger_damage_dealt = attack_result.damage_dealt
+
+        if target_mon.current_hp < 1:
+            round_details = RoundDetails(
+                turn_number=turn.turn_number,
+                actions=actions,
+                self_mon_status=None,
+                opponent_mon_status=None,
+            )
+            battle_response = BattleResponse(
+                active=False, pending=False, round_details=round_details
+            )
+            await resolve_battle(db, turn, is_challenger)
+            return battle_response
 
     turn.resolved = True
-    turn.challenger_speed = 0
-    turn.challenged_speed = 0
 
     await battle_crud.update_instance(db, turn)
     return BattleResponse(
@@ -233,11 +414,17 @@ async def resolve_turn(
         pending=False,
         round_details=RoundDetails(
             turn_number=turn.turn_number,
-            actions=[challenger_attack, challenged_attack],
+            actions=actions,
             self_mon_status=None,
             opponent_mon_status=None,
         ),
     )
+
+
+def determine_speed(monster: MonsterInstance, move: Move) -> int:
+    """Determine the speed of selected move."""
+    # Move speed + monster speed + modifier?
+    return move.speed + monster.speed
 
 
 async def resolve_battle(db: AsyncSession, turn: BattleTurn, is_challenger: bool):
@@ -313,8 +500,8 @@ async def resolve_attack(
     )
 
 
-async def set_turn_move(
-    db: AsyncSession, turn: BattleTurn, perspective: EncounterPerspective, move_id: int
+def set_turn_move(
+    turn: BattleTurn, perspective: EncounterPerspective, move_id: int
 ) -> BattleTurn:
     """Assign move for turn."""
     match perspective:
@@ -348,8 +535,7 @@ async def fetch_active_turn(db: AsyncSession, encounter: Encounter) -> BattleTur
                 challenged_damage_dealt=None,
                 challenger_move_missed=None,
                 challenged_move_missed=None,
-                challenged_speed=0,
-                challenger_speed=0,
+                first_actor=None,
                 resolved=False,
             ),
         )
@@ -368,8 +554,7 @@ async def fetch_active_turn(db: AsyncSession, encounter: Encounter) -> BattleTur
                 challenged_damage_dealt=None,
                 challenger_move_missed=None,
                 challenged_move_missed=None,
-                challenged_speed=0,
-                challenger_speed=0,
+                first_actor=None,
                 resolved=False,
             ),
         )
@@ -436,47 +621,87 @@ async def format_battle_turn(
 
     actions: list[TurnAction] = []
 
-    if None not in (battle.challenger_move_id, battle.challenger_move_missed):
-        challenger_move = await move_crud.get_by_id(db, battle.challenger_move_id)
+    move_order = [EncounterPerspective.CHALLENGER, EncounterPerspective.CHALLENGED]
+    if battle.challenger_swap is not None:
         is_self = encounter.challenger_id == player_id
         actions.append(
             TurnAction(
                 actor="self" if is_self else "opponent",
                 actor_perspective="challenger",
-                message=format_action_message(
-                    encounter.challenger_id == player_id,
-                    challenger_move.name,
-                    battle.challenger_move_missed,
-                ),
-                move_name=challenger_move.name,
-                missed=battle.challenger_move_missed,
-                damage_dealt=battle.challenger_damage_dealt,
+                message="Swapped monster",
+                move_name="swap",
+                missed=False,
+                damage_dealt=0,
                 target_max_health=battle.challenged_max_hp,
                 target_pre_damage_health=battle.challenged_pre_damage_health,
             )
         )
-
-    if None not in (battle.challenged_move_id, battle.challenged_move_missed):
-        challenged_move = await move_crud.get_by_id(db, battle.challenged_move_id)
+        move_order.remove(EncounterPerspective.CHALLENGER)
+    if battle.challenged_swap is not None:
         is_self = encounter.challenged_id == player_id
         actions.append(
             TurnAction(
                 actor="self" if is_self else "opponent",
                 actor_perspective="challenged",
-                message=format_action_message(
-                    encounter.challenged_id == player_id,
-                    challenged_move.name,
-                    battle.challenged_move_missed,
-                ),
-                move_name=challenged_move.name,
-                missed=battle.challenged_move_missed,
-                damage_dealt=battle.challenged_damage_dealt,
+                message="Swapped monster",
+                move_name="swap",
+                missed=False,
+                damage_dealt=0,
                 target_max_health=battle.challenger_max_hp,
                 target_pre_damage_health=battle.challenger_pre_damage_health,
             )
         )
+        move_order.remove(EncounterPerspective.CHALLENGED)
 
-    # TODO: add turn ordering
+    if battle.first_actor is EncounterPerspective.CHALLENGED:
+        move_order.reverse()
+
+    for move in move_order:
+        if move is EncounterPerspective.CHALLENGED:
+            # Fainted
+            if battle.challenged_move_missed is None:
+                continue
+            move_instance = await move_crud.get_by_id(db, battle.challenged_move_id)
+            is_self = encounter.challenged_id == player_id
+            actions.append(
+                TurnAction(
+                    actor="self" if is_self else "opponent",
+                    actor_perspective="challenged",
+                    message=format_action_message(
+                        is_self,
+                        move_instance.name,
+                        battle.challenged_move_missed,
+                    ),
+                    move_name=move_instance.name,
+                    missed=battle.challenged_move_missed,
+                    damage_dealt=battle.challenged_damage_dealt,
+                    target_max_health=battle.challenger_max_hp,
+                    target_pre_damage_health=battle.challenger_pre_damage_health,
+                )
+            )
+        else:
+            # Fainted
+            if battle.challenger_move_missed is None:
+                continue
+            move_instance = await move_crud.get_by_id(db, battle.challenger_move_id)
+            is_self = encounter.challenger_id == player_id
+            actions.append(
+                TurnAction(
+                    actor="self" if is_self else "opponent",
+                    actor_perspective="challenger",
+                    message=format_action_message(
+                        is_self,
+                        move_instance.name,
+                        battle.challenger_move_missed,
+                    ),
+                    move_name=move_instance.name,
+                    missed=battle.challenger_move_missed,
+                    damage_dealt=battle.challenger_damage_dealt,
+                    target_max_health=battle.challenged_max_hp,
+                    target_pre_damage_health=battle.challenged_pre_damage_health,
+                )
+            )
+
     # TODO: add status effects
     return RoundDetails(
         turn_number=battle.turn_number,
@@ -484,6 +709,23 @@ async def format_battle_turn(
         self_mon_status=StatusEffect(),
         opponent_mon_status=StatusEffect(),
     )
+
+
+async def apply_swap(
+    db: AsyncSession,
+    encounter: Encounter,
+    perspective: EncounterPerspective,
+    swap_mon: MonsterInstance,
+) -> None:
+    """Persist a swap once the turn resolves."""
+    player_id = (
+        encounter.challenger_id
+        if perspective is EncounterPerspective.CHALLENGER
+        else encounter.challenged_id
+    )
+    player = await player_crud.get_by_id(db, player_id)
+    await party_service.set_active(db, player, swap_mon.party_slot)
+    await encounter_service.set_player_monster(db, player, swap_mon)
 
 
 def format_action_message(is_self: bool, move_name: str, missed: bool) -> str:

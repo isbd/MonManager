@@ -69,6 +69,7 @@ async def create_monster_instance(
         max_hp=30,
         current_hp=30,
         level=1,
+        speed=50,
         party_slot=party_slot,
         owner_id=owner_id,
     )

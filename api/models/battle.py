@@ -1,7 +1,8 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from .base import Base
+from .encounter import EncounterPerspective
 
 
 class BattleTurn(Base):
@@ -12,12 +13,20 @@ class BattleTurn(Base):
     turn_number = Column(Integer, nullable=False)
     resolved = Column(Boolean, nullable=False, default=False)
 
+    challenger_swap = Column(Integer, ForeignKey("monster_instances.id"), nullable=True)
+    challenged_swap = Column(Integer, ForeignKey("monster_instances.id"), nullable=True)
+    # challenger_item =
+    # challenged_item =
+
     challenger_mon_id = Column(
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )
     challenged_mon_id = Column(
         Integer, ForeignKey("monster_instances.id"), nullable=True
     )
+
+    challenger_submitted = Column(Boolean, nullable=False, default=False)
+    challenged_submitted = Column(Boolean, nullable=False, default=False)
 
     challenger_move_id = Column(Integer, ForeignKey("moves.id"), nullable=True)
     challenged_move_id = Column(Integer, ForeignKey("moves.id"), nullable=True)
@@ -33,8 +42,7 @@ class BattleTurn(Base):
     challenger_move_missed = Column(Boolean, nullable=True)
     challenged_move_missed = Column(Boolean, nullable=True)
 
-    challenger_speed = Column(Integer, nullable=False)
-    challenged_speed = Column(Integer, nullable=False)
+    first_actor = Column(Enum(EncounterPerspective), nullable=True)
 
     challenger_move = relationship("Move", foreign_keys=[challenger_move_id])
     challenged_move = relationship("Move", foreign_keys=[challenged_move_id])

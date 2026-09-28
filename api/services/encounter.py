@@ -27,6 +27,23 @@ from schemas.encounter import (
 from schemas.event import EventType
 
 
+async def set_player_monster(
+    db: AsyncSession, player: PlayerInstance, monster_id: int
+) -> Encounter:
+    """Set player's monster inside encounter, used during switches."""
+    encounter = await fetch_player_encounter(db, player)
+    if encounter.challenged_id == player.id:
+        encounter.challenged_mon_id = monster_id
+    elif encounter.challenger_id == player.id:
+        encounter.challenger_mon_id = monster_id
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail="Player does not exist inside encounter.",
+        )
+    encounter_crud.update_instance(db, encounter)
+
+
 async def fetch_player_encounter(db: AsyncSession, player: PlayerInstance) -> Encounter:
     """Safely fetch player encounter, used often for different moves."""
     if not player.active_encounter_id:

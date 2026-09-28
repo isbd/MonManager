@@ -3,12 +3,14 @@
         "name": "Bite",
         "description": "Biting attack",
         "power": 2,
+        "speed": 50,
         "accuracy": 100
     },
     {
         "name": "Headbutt",
         "description": "Headbutt attack",
         "power": 6,
+        "speed": 70,
         "accuracy": 60
     }
 ]

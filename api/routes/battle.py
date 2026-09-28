@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from dependencies import get_current_player
 from models.player import PlayerInstance
-from schemas.battle import AttackRequest, BattleResponse, CatchResponse, RoundDetails
+from schemas.battle import (
+    AttackRequest,
+    BattleResponse,
+    CatchResponse,
+    FillResponse,
+    RoundDetails,
+    SwapRequest,
+)
 from schemas.move import MonsterMoveResponse
 from services import battle_service
 
@@ -20,7 +27,24 @@ async def attempt_catch(
     return await battle_service.attempt_catch(db, player)
 
 
-# TODO:Switch monster option.
+@router.post("/swap", response_model=BattleResponse)
+async def attempt_swap(
+    body: SwapRequest,
+    db: AsyncSession = Depends(get_db),
+    player: PlayerInstance = Depends(get_current_player),
+):
+    """Attempt an swap active monster."""
+    return await battle_service.attempt_swap(db, player, body.slot)
+
+
+@router.post("/fill", response_model=FillResponse)
+async def attempt_fill(
+    body: SwapRequest,
+    db: AsyncSession = Depends(get_db),
+    player: PlayerInstance = Depends(get_current_player),
+):
+    """Attempt to fill empty spot from monster death."""
+    return await battle_service.attempt_fill(db, player, body.slot)
 
 
 @router.post("/attack", response_model=BattleResponse)
